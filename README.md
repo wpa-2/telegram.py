@@ -42,9 +42,9 @@ FIX BELOW I HOPE
 Add this to the bottom of the file /etc/security/limits.conf 
 
 ```
-pi soft nproc 5000
-pi hard nproc 5000
+ulimit -n 6000
 ```
+
 
 
 before the line that says #End of line
