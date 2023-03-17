@@ -41,8 +41,12 @@ FIX BELOW I HOPE
 
 Add this to the bottom of the file /etc/security/limits.conf 
 
-before the line that says #End of line
 ```
 pi soft nproc 5000
 pi hard nproc 5000
 ```
+
+
+before the line that says #End of line
+
+Please report any issues and get in touch over in the pwnagotchi discord. 
