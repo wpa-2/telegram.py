@@ -1,4 +1,4 @@
-# telegram.py
+# telegram.py interactive pwnagotchi plugin
 
 ![Alt text](https://cdn.discordapp.com/attachments/807640716040732723/1086274624263819324/2023-03-17_12_39_37-Telegram_Web_Mozilla_Firefox.png "Optional title")
 
