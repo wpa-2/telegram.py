@@ -4,14 +4,16 @@ import re
 import os
 import time
 import subprocess
+import telegram
+import telegram.ext as tg
 import pwnagotchi.plugins as plugins
-import telegram.ext as telegram
+from pwnagotchi.voice import Voice
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import MessageHandler, Filters, CallbackQueryHandler
+from telegram.ext import MessageHandler, Filters, CallbackQueryHandler, Updater
 
 class Telegram(plugins.Plugin):
     __author__ = 'WPA2'
-    __version__ = '0.0.8'
+    __version__ = '0.0.9'
     __license__ = 'GPL3'
     __description__ = 'Chats to telegram'
     __dependencies__ = 'python-telegram-bot==13.15',
@@ -19,6 +21,10 @@ class Telegram(plugins.Plugin):
     def on_loaded(self):
         logging.info("telegram plugin loaded.")
         self.options['auto_start'] = True
+        self.completed_tasks = 0
+        self.num_tasks = 6  # Update this value to match the number of tasks performed by this plugin
+        self.updater = None  # Add this line to initialize the updater attribute
+        self.start_menu_sent = False
 
     def on_agent(self, agent):
         if 'auto_start' in self.options and self.options['auto_start']:
@@ -54,6 +60,11 @@ class Telegram(plugins.Plugin):
             self.read_banthex_cracked(agent, update, context)
         elif query.data == 'handshake_count':
             self.handshake_count(agent, update, context)
+            
+        # Increment the number of completed tasks and check if all tasks are completed
+        self.completed_tasks += 1
+        if self.completed_tasks == self.num_tasks:
+            self.terminate_program()
 
     def reboot(self, agent, update, context):
         response = "Rebooting now..."
@@ -75,6 +86,11 @@ class Telegram(plugins.Plugin):
 
         response = f"Uptime: {uptime_hours} hours and {uptime_remaining_minutes} minutes"
         update.effective_message.reply_text(response)
+        
+        # Increment the number of completed tasks and check if all tasks are completed
+        self.completed_tasks += 1
+        if self.completed_tasks == self.num_tasks:
+            self.terminate_program()
         
     def read_handshake_pot_files(self, file_path):
         try:
@@ -108,6 +124,11 @@ class Telegram(plugins.Plugin):
         else:
             for chunk in chunks:
                 update.effective_message.reply_text(chunk)
+                
+        # Increment the number of completed tasks and check if all tasks are completed
+        self.completed_tasks += 1
+        if self.completed_tasks == self.num_tasks:
+            self.terminate_program()
 
     def read_banthex_cracked(self, agent, update, context):
         file_path = "/root/handshakes/banthex.cracked.potfile"
@@ -118,32 +139,41 @@ class Telegram(plugins.Plugin):
             for chunk in chunks:
                 update.effective_message.reply_text(chunk)
         
+        # Increment the number of completed tasks and check if all tasks are completed
+        self.completed_tasks += 1
+        if self.completed_tasks == self.num_tasks:
+            self.terminate_program()
+        
     def handshake_count(self, agent, update, context):
         handshake_dir = "/root/handshakes/"
         count = len([name for name in os.listdir(handshake_dir) if os.path.isfile(os.path.join(handshake_dir, name))])
 
         response = f"Total handshakes captured: {count}"
         update.effective_message.reply_text(response)
+        
+        # Increment the number of completed tasks and check if all tasks are completed
+        self.completed_tasks += 1
+        if self.completed_tasks == self.num_tasks:
+            self.terminate_program()
            
     def on_internet_available(self, agent):
+        if hasattr(self, 'telegram_connected') and self.telegram_connected:
+            return  # Skip if already connected
+
         config = agent.config()
         display = agent.view()
         last_session = agent.last_session
 
-        if not hasattr(self, "updater"):
-            try:
-                logging.info("Connecting to Telegram...")
+        try:
+            logging.info("Connecting to Telegram...")
+            bot = telegram.Bot(self.options['bot_token'])
 
-                self.updater = telegram.Updater(token=self.options['bot_token'])
-                bot = self.updater.bot
-
-                # Register command handlers
+            if self.updater is None:
+                self.updater = Updater(token=self.options['bot_token'], use_context=True)
                 self.register_command_handlers(agent, self.updater.dispatcher)
-
-                # Start the Bot's polling in a separate thread
                 self.updater.start_polling()
 
-                # Send the start menu to a specific user
+            if not self.start_menu_sent:
                 keyboard = [[InlineKeyboardButton("Reboot", callback_data='reboot'),
                              InlineKeyboardButton("Shutdown", callback_data='shutdown')],
                             [InlineKeyboardButton("Uptime", callback_data='uptime'),
@@ -153,10 +183,62 @@ class Telegram(plugins.Plugin):
                 response = "Welcome to Pwnagotchi!\n\nPlease select an option:"
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 bot.send_message(chat_id=self.options['chat_id'], text=response, reply_markup=reply_markup)
+                self.start_menu_sent = True
 
-            except Exception:
-                logging.exception("Error while connecting to Telegram")
+            # Set the flag to indicate that the connection has been established
+            self.telegram_connected = True
 
-    if __name__ == "__main__":
-        plugin = Telegram()
-        plugin.on_loaded()
+        except Exception as e:
+            logging.error("Error while sending on Telegram")
+            logging.error(str(e))
+
+        if last_session.is_new() and last_session.handshakes > 0:
+            msg = f"Session started at {last_session.started_at()} and captured {last_session.handshakes} new handshakes"
+            self.send_notification(msg)
+
+            if last_session.is_new() and last_session.handshakes > 0:
+                message = Voice(lang=config['main']['lang']).on_last_session_tweet(last_session)
+                if self.options['send_message'] is True:
+                    bot.sendMessage(chat_id=self.options['chat_id'], text=message, disable_web_page_preview=True)
+                    logging.info("telegram: message sent: %s" % message)
+
+                picture = '/root/pwnagotchi.png'
+                display.on_manual_mode(last_session)
+                display.image().save(picture, 'png')
+                display.update(force=True)
+
+                if self.options['send_picture'] is True:
+                    bot.sendPhoto(chat_id=self.options['chat_id'], photo=open(picture, 'rb'))
+                    logging.info("telegram: picture sent")
+
+                last_session.save_session_id()
+                display.set('status', 'Telegram notification sent!')
+                display.update(force=True)
+
+    def on_handshake(self, agent, filename, access_point, client_station):
+        config = agent.config()
+        display = agent.view()
+
+        try:
+            logging.info("Connecting to Telegram...")
+
+            bot = telegram.Bot(self.options['bot_token'])
+
+            message = "New handshake captured: {} - {}".format(access_point['hostname'], client_station['mac'])
+            if self.options['send_message'] is True:
+                bot.sendMessage(chat_id=self.options['chat_id'], text=message, disable_web_page_preview=True)
+                logging.info("telegram: message sent: %s" % message)
+
+            display.set('status', 'Telegram notification sent!')
+            display.update(force=True)
+        except Exception:
+            logging.exception("Error while sending on Telegram")
+                
+    def terminate_program(self):
+        # This function will be called once all tasks have been completed
+        # You can add additional cleanup code here if needed
+        logging.info("All tasks completed. Terminating program.")
+        
+if __name__ == "__main__":
+    plugin = Telegram()
+    plugin.on_loaded()
