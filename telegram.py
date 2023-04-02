@@ -5,6 +5,7 @@ import os
 import time
 import subprocess
 import telegram
+import json
 import telegram.ext as tg
 import pwnagotchi.plugins as plugins
 from pwnagotchi.voice import Voice
@@ -25,6 +26,7 @@ class Telegram(plugins.Plugin):
         self.num_tasks = 6  # Update this value to match the number of tasks performed by this plugin
         self.updater = None  # Add this line to initialize the updater attribute
         self.start_menu_sent = False
+        self.last_try_time = 0
 
     def on_agent(self, agent):
         if 'auto_start' in self.options and self.options['auto_start']:
@@ -40,7 +42,9 @@ class Telegram(plugins.Plugin):
                     [InlineKeyboardButton("Uptime", callback_data='uptime'),
                      InlineKeyboardButton("Handshake Count", callback_data='handshake_count')],
                     [InlineKeyboardButton("Read WPA-Sec Cracked", callback_data='read_wpa_sec_cracked'),
-                     InlineKeyboardButton("Read Banthex Cracked", callback_data='read_banthex_cracked')]]
+                     InlineKeyboardButton("Read Banthex Cracked", callback_data='read_banthex_cracked')],
+                    [InlineKeyboardButton("BT Sniffed Info", callback_data='bt_sniff_info'),
+                     InlineKeyboardButton("Empty", callback_data='empty')]]
         response = "Welcome to Pwnagotchi!\n\nPlease select an option:"
         reply_markup = InlineKeyboardMarkup(keyboard)
         update.message.reply_text(response, reply_markup=reply_markup)
@@ -60,7 +64,11 @@ class Telegram(plugins.Plugin):
             self.read_banthex_cracked(agent, update, context)
         elif query.data == 'handshake_count':
             self.handshake_count(agent, update, context)
-            
+        elif query.data == 'bt_sniff_info':
+            self.bt_sniff_info(agent, update, context)
+        elif query.data == 'empty':
+            return
+
         # Increment the number of completed tasks and check if all tasks are completed
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
@@ -86,12 +94,12 @@ class Telegram(plugins.Plugin):
 
         response = f"Uptime: {uptime_hours} hours and {uptime_remaining_minutes} minutes"
         update.effective_message.reply_text(response)
-        
+
         # Increment the number of completed tasks and check if all tasks are completed
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
             self.terminate_program()
-        
+
     def read_handshake_pot_files(self, file_path):
         try:
             content = subprocess.check_output(['sudo', 'cat', file_path])
@@ -115,7 +123,7 @@ class Telegram(plugins.Plugin):
 
         except subprocess.CalledProcessError as e:
             return [f"Error reading file: {e}"]
-            
+
     def read_wpa_sec_cracked(self, agent, update, context):
         file_path = "/root/handshakes/wpa-sec.cracked.potfile"
         chunks = self.read_handshake_pot_files(file_path)
@@ -124,7 +132,7 @@ class Telegram(plugins.Plugin):
         else:
             for chunk in chunks:
                 update.effective_message.reply_text(chunk)
-                
+
         # Increment the number of completed tasks and check if all tasks are completed
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
@@ -138,25 +146,28 @@ class Telegram(plugins.Plugin):
         else:
             for chunk in chunks:
                 update.effective_message.reply_text(chunk)
-        
+
         # Increment the number of completed tasks and check if all tasks are completed
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
             self.terminate_program()
-        
+
     def handshake_count(self, agent, update, context):
         handshake_dir = "/root/handshakes/"
         count = len([name for name in os.listdir(handshake_dir) if os.path.isfile(os.path.join(handshake_dir, name))])
 
         response = f"Total handshakes captured: {count}"
         update.effective_message.reply_text(response)
-        
+
         # Increment the number of completed tasks and check if all tasks are completed
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
             self.terminate_program()
-           
+
     def on_internet_available(self, agent):
+        # Send message about Bluetooth Sniffed that is New or Updated
+        self.bt_sniff_message(agent)
+
         if hasattr(self, 'telegram_connected') and self.telegram_connected:
             return  # Skip if already connected
 
@@ -179,7 +190,9 @@ class Telegram(plugins.Plugin):
                             [InlineKeyboardButton("Uptime", callback_data='uptime'),
                              InlineKeyboardButton("Handshake Count", callback_data='handshake_count')],
                             [InlineKeyboardButton("Read WPA-Sec Cracked", callback_data='read_wpa_sec_cracked'),
-                             InlineKeyboardButton("Read Banthex Cracked", callback_data='read_banthex_cracked')]]
+                             InlineKeyboardButton("Read Banthex Cracked", callback_data='read_banthex_cracked')],
+                            [InlineKeyboardButton("BT Sniffed Info", callback_data='bt_sniff_info'),
+                             InlineKeyboardButton("Empty", callback_data='empty')]]
                 response = "Welcome to Pwnagotchi!\n\nPlease select an option:"
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 bot.send_message(chat_id=self.options['chat_id'], text=response, reply_markup=reply_markup)
@@ -233,12 +246,85 @@ class Telegram(plugins.Plugin):
             display.update(force=True)
         except Exception:
             logging.exception("Error while sending on Telegram")
-                
+
     def terminate_program(self):
         # This function will be called once all tasks have been completed
         # You can add additional cleanup code here if needed
         logging.info("All tasks completed. Terminating program.")
-        
+
+    def bt_sniff_message(self, agent):
+        config = agent.config()
+        display = agent.view()
+        current_time = time.time()
+        try:
+            bts_timer = self.options['bts_timer']
+        except Exception:
+            bts_timer = 45
+        try:
+            bts_json_file = self.options['bts_json_file']
+        except Exception:
+            bts_json_file = '/root/handshakes/bluetooth_devices.json'
+        # Checking the time elapsed since last scan
+        if os.path.exists(bts_json_file):
+            if current_time - self.last_try_time >= bts_timer:
+                logging.info("[BtST] Trying to check BT json...")
+                self.last_try_time = current_time
+                try:
+                    # load the JSON file
+                    with open(bts_json_file, 'r') as f:
+                        bluetooth_data = json.load(f)
+                    # check if there is any new info
+                    for mac in bluetooth_data:
+                        if bluetooth_data[mac]['new_info'] == True:
+                            logging.info("[BtST] Connecting to Telegram...")
+                            bot = telegram.Bot(self.options['bot_token'])
+                            message = f"New Bluetooth device detected:\n\nName: {bluetooth_data[mac]['name']}\nMAC: {mac}\nManufacturer: {bluetooth_data[mac]['manufacturer']}\nFirst Seen: {bluetooth_data[mac]['first_seen']}\nLast Seen: {bluetooth_data[mac]['last_seen']}"
+                            logging.info("[BtST] Sending: %s" % message)
+                            bot.sendMessage(chat_id=self.options['chat_id'], text=message, disable_web_page_preview=True)
+                            bluetooth_data[mac]['new_info'] = False
+                            with open(bts_json_file, 'w') as f:
+                                json.dump(bluetooth_data, f)
+                            logging.info("[BtST] telegram: message sent: %s" % message)
+                            display.set('status', 'Telegram notification for Bluetooth sent!')
+                            display.update(force=True)
+                        elif bluetooth_data[mac]['new_info'] == 2:
+                            logging.info("[BtST] Connecting to Telegram...")
+                            bot = telegram.Bot(self.options['bot_token'])
+                            message = f"Bluetooth device updated:\n\nName: {bluetooth_data[mac]['name']}\nMAC: {mac}\nManufacturer: {bluetooth_data[mac]['manufacturer']}\nFirst Seen: {bluetooth_data[mac]['first_seen']}\nLast Seen: {bluetooth_data[mac]['last_seen']}"
+                            logging.info("[BtST] Sending: %s" % message)
+                            bot.sendMessage(chat_id=self.options['chat_id'], text=message, disable_web_page_preview=True)
+                            bluetooth_data[mac]['new_info'] = False
+                            with open(bts_json_file, 'w') as f:
+                                json.dump(bluetooth_data, f)
+                            logging.info("[BtST] telegram: message sent: %s" % message)
+                            display.set('status', 'Telegram notification for Bluetooth sent!')
+                            display.update(force=True)
+                except Exception:
+                    logging.exception("[BtST] Error while sending Bluetooth data on Telegram")
+
+    def bt_sniff_info(self, agent, update, context):
+        logging.info("[BtST] Reading JSON file...")
+        try:
+            bts_json_file = self.options['bts_json_file']
+        except Exception:
+            bts_json_file = '/root/handshakes/bluetooth_devices.json'
+        if os.path.exists(bts_json_file):
+            with open(bts_json_file, 'r') as f:
+                bluetooth_data = json.load(f)
+            num_devices = len(bluetooth_data)
+            num_unknown = sum(1 for device in bluetooth_data.values() if device['name'] == 'Unknown' or device['manufacturer'] == 'Unknown')
+            num_known = num_devices - num_unknown
+            response = f"Bluetooth Sniffed Info\n\nAll of them: %s\Fully sniffed: %s" % (num_devices, num_known)
+            logging.info("[BtST] Telegram message: %s" % response)
+        else:
+            response = f"Plugin bluetoothsniffer is not loaded."
+        update.effective_message.reply_text(response)
+
+        # Increment the number of completed tasks and check if all tasks are completed
+        self.completed_tasks += 1
+        if self.completed_tasks == self.num_tasks:
+            self.terminate_program()
+
 if __name__ == "__main__":
     plugin = Telegram()
     plugin.on_loaded()
