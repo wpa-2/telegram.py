@@ -27,6 +27,8 @@ main.plugins.telegram.bot_name = "pwnagotchi"
 main.plugins.telegram.chat_id = "CHAT ID"
 main.plugins.telegram.send_picture = true
 main.plugins.telegram.send_message = true
+main.plugins.telegram.bts_timer = 45
+main.plugins.telegram.bts_json_file = "/root/handshakes/bluetooth_devices.json"
 ```
 
 Current known issues 
