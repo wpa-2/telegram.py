@@ -265,7 +265,7 @@ class Telegram(plugins.Plugin):
         except Exception:
             bts_json_file = '/root/handshakes/bluetooth_devices.json'
         # Checking the time elapsed since last scan
-        if os.path.exists(bts_json_file) and os.path.getsize(self.options['devices_file']) != 0:
+        if os.path.exists(bts_json_file) and os.path.getsize(bts_json_file) != 0:
             if current_time - self.last_try_time >= bts_timer:
                 logging.info("[BtST] Trying to check BT json...")
                 self.last_try_time = current_time
@@ -308,7 +308,7 @@ class Telegram(plugins.Plugin):
             bts_json_file = self.options['bts_json_file']
         except Exception:
             bts_json_file = '/root/handshakes/bluetooth_devices.json'
-        if os.path.exists(bts_json_file) and os.path.getsize(self.options['devices_file']) != 0:
+        if os.path.exists(bts_json_file) and os.path.getsize(bts_json_file) != 0:
             with open(bts_json_file, 'r') as f:
                 bluetooth_data = json.load(f)
             num_devices = len(bluetooth_data)
