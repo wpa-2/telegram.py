@@ -314,7 +314,7 @@ class Telegram(plugins.Plugin):
             num_devices = len(bluetooth_data)
             num_unknown = sum(1 for device in bluetooth_data.values() if device['name'] == 'Unknown' or device['manufacturer'] == 'Unknown')
             num_known = num_devices - num_unknown
-            response = f"Bluetooth Sniffed Info\n\nAll of them: %s\Fully sniffed: %s" % (num_devices, num_known)
+            response = f"Bluetooth Sniffed Info\n\nAll of them: %s\nFully sniffed: %s" % (num_devices, num_known)
             logging.info("[BtST] Telegram message: %s" % response)
         else:
             response = f"[BtST] Plugin bluetoothsniffer is not loaded."
