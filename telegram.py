@@ -265,7 +265,7 @@ class Telegram(plugins.Plugin):
         except Exception:
             bts_json_file = '/root/handshakes/bluetooth_devices.json'
         # Checking the time elapsed since last scan
-        if os.path.exists(bts_json_file):
+        if os.path.exists(bts_json_file) and os.path.getsize(bts_json_file) != 0:
             if current_time - self.last_try_time >= bts_timer:
                 logging.info("[BtST] Trying to check BT json...")
                 self.last_try_time = current_time
@@ -308,16 +308,16 @@ class Telegram(plugins.Plugin):
             bts_json_file = self.options['bts_json_file']
         except Exception:
             bts_json_file = '/root/handshakes/bluetooth_devices.json'
-        if os.path.exists(bts_json_file):
+        if os.path.exists(bts_json_file) and os.path.getsize(bts_json_file) != 0:
             with open(bts_json_file, 'r') as f:
                 bluetooth_data = json.load(f)
             num_devices = len(bluetooth_data)
             num_unknown = sum(1 for device in bluetooth_data.values() if device['name'] == 'Unknown' or device['manufacturer'] == 'Unknown')
             num_known = num_devices - num_unknown
-            response = f"Bluetooth Sniffed Info\n\nAll of them: %s\Fully sniffed: %s" % (num_devices, num_known)
+            response = f"Bluetooth Sniffed Info\n\nAll of them: %s\nFully sniffed: %s" % (num_devices, num_known)
             logging.info("[BtST] Telegram message: %s" % response)
         else:
-            response = f"Plugin bluetoothsniffer is not loaded."
+            response = f"[BtST] Plugin bluetoothsniffer is not loaded."
         update.effective_message.reply_text(response)
 
         # Increment the number of completed tasks and check if all tasks are completed
