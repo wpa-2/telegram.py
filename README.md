@@ -22,7 +22,7 @@ Copy plugin to your custom folder normally here
 Edit your config.toml wit there details
 ```
 main.plugins.telegram.enabled = true
-main.plugins.telegram.bot_token = "BOT IT"
+main.plugins.telegram.bot_token = "BOT ID"
 main.plugins.telegram.bot_name = "pwnagotchi"
 main.plugins.telegram.chat_id = "CHAT ID"
 main.plugins.telegram.send_picture = true
