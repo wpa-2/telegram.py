@@ -12,6 +12,7 @@ https://github.com/wpa-2/tele.py (Here is a simple script to test if you have th
 ## Setup
 ```
 __dependencies__ = 'python-telegram-bot==13.15'
+`pip3 install python-telegram-bot==13.15`
 ```
 
 Copy plugin to your custom folder normally here 
