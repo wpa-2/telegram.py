@@ -1,4 +1,4 @@
-# telegram.py interactive pwnagotchi plugin
+# telegram.py interactive pwnagotchi plugin now included bluetooth sniffing from @DIY Tech Tinker
 
 ![Alt text](https://cdn.discordapp.com/attachments/807640716040732723/1086274624263819324/2023-03-17_12_39_37-Telegram_Web_Mozilla_Firefox.png "Optional title")
 
