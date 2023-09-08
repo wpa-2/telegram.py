@@ -29,28 +29,10 @@ main.plugins.telegram.bot_name = "pwnagotchi"
 main.plugins.telegram.chat_id = "CHAT ID"
 main.plugins.telegram.send_picture = true
 main.plugins.telegram.send_message = true
-main.plugins.telegram.bts_timer = 45
-main.plugins.telegram.bts_json_file = "/root/handshakes/bluetooth_devices.json"
 ```
 
 Current known issues 
+#4
 
-Some times we get this error 
-```
-can't start new thread
-[2023-03-17 13:20:39,972] [ERROR] can't start new thread
-```
-
-FIX BELOW I HOPE
-
-Add this to the bottom of the file /etc/security/limits.conf 
-
-```
-ulimit -n 6000
-```
-
-
-
-before the line that says #End of line
 
 Please report any issues and get in touch over in the pwnagotchi discord. 
