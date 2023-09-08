@@ -114,12 +114,7 @@ class Telegram(plugins.Plugin):
 
             # Join the chunks into strings
             chunk_strings = ['\n'.join(chunk) for chunk in chunks]
-
-            # Introduce a delay here, for example, 1 message per 5 seconds
-            delay_between_messages = 5  # Adjust the delay as needed (in seconds)
-            for chunk_string in chunk_strings:
-                self.send_message_to_telegram(chunk_string)
-                time.sleep(delay_between_messages)  # Add a delay between messages
+            return chunk_strings
 
         except subprocess.CalledProcessError as e:
             return [f"Error reading file: {e}"]
