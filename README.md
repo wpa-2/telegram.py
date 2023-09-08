@@ -32,7 +32,7 @@ main.plugins.telegram.send_message = true
 ```
 
 Current known issues 
-#4
+https://github.com/wpa-2/telegram.py/issues/4 -- Working on fixing 
 
 
 Please report any issues and get in touch over in the pwnagotchi discord. 
