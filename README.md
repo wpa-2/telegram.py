@@ -2,7 +2,7 @@
 
 ![Alt text](https://cdn.discordapp.com/attachments/807640716040732723/1149691096146903111/2023-09-08_13_53_58-bytezero_Mozilla_Firefox.png)
 
-A simple interactive telegram plugin for pwnagotchi the works in manual mdoe and AI mode, When internet is connected it takeS a minute or 3 before you should get a menu 
+A simple interactive telegram plugin for pwnagotchi the works in manual mode and AI mode, When internet is connected it takes a minute or 3 before you should get a menu 
 pop up. 
 
 https://github.com/wpa-2/tele.py (Here is a simple script to test if you have the correct Bot_id and Chat_id)
