@@ -40,7 +40,7 @@ class Telegram(plugins.Plugin):
                     [InlineKeyboardButton("Uptime", callback_data='uptime'),
                      InlineKeyboardButton("Handshake Count", callback_data='handshake_count')],
                     [InlineKeyboardButton("Read WPA-Sec Cracked", callback_data='read_wpa_sec_cracked'),
-                     InlineKeyboardButton("Read Banthex Cracked", callback_data='read_banthex_cracked')],
+                     InlineKeyboardButton("Awaiting Function", callback_data='Not implimented')],
                     [InlineKeyboardButton("Fetch Pwngrid Inbox", callback_data='fetch_pwngrid_inbox')]]  # Add the new button
         response = "Welcome to Pwnagotchi!\n\nPlease select an option:"
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -57,8 +57,6 @@ class Telegram(plugins.Plugin):
             self.uptime(agent, update, context)
         elif query.data == 'read_wpa_sec_cracked':
             self.read_wpa_sec_cracked(agent, update, context)
-        elif query.data == 'read_banthex_cracked':
-            self.read_banthex_cracked(agent, update, context)
         elif query.data == 'handshake_count':
             self.handshake_count(agent, update, context)
         elif query.data == 'fetch_pwngrid_inbox':  # Handle the new button
@@ -133,20 +131,6 @@ class Telegram(plugins.Plugin):
         if self.completed_tasks == self.num_tasks:
             self.terminate_program()
 
-    def read_banthex_cracked(self, agent, update, context):
-        file_path = "/root/handshakes/banthex.cracked.potfile"
-        chunks = self.read_handshake_pot_files(file_path)
-        if not chunks or not any(chunk.strip() for chunk in chunks):
-            update.effective_message.reply_text("The banthex.cracked.potfile is empty.")
-        else:
-            for chunk in chunks:
-                update.effective_message.reply_text(chunk)
-
-        # Increment the number of completed tasks and check if all tasks are completed
-        self.completed_tasks += 1
-        if self.completed_tasks == self.num_tasks:
-            self.terminate_program()
-
     def handshake_count(self, agent, update, context):
         handshake_dir = "/root/handshakes/"
         count = len([name for name in os.listdir(handshake_dir) if os.path.isfile(os.path.join(handshake_dir, name))])
@@ -211,7 +195,7 @@ class Telegram(plugins.Plugin):
                             [InlineKeyboardButton("Uptime", callback_data='uptime'),
                              InlineKeyboardButton("Handshake Count", callback_data='handshake_count')],
                             [InlineKeyboardButton("Read WPA-Sec Cracked", callback_data='read_wpa_sec_cracked'),
-                             InlineKeyboardButton("Read Banthex Cracked", callback_data='read_banthex_cracked')],
+                             InlineKeyboardButton("Awaiting Function", callback_data='Not implimented')],
                             [InlineKeyboardButton("Fetch Pwngrid Inbox", callback_data='fetch_pwngrid_inbox')]]  # Add the new button
                 response = "Welcome to Pwnagotchi!\n\nPlease select an option:"
                 reply_markup = InlineKeyboardMarkup(keyboard)
