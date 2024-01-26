@@ -16,7 +16,7 @@ import io
 
 class Telegram(plugins.Plugin):
     __author__ = 'WPA2'
-    __version__ = '0.0.9'
+    __version__ = '0.1.1'
     __license__ = 'GPL3'
     __description__ = 'Chats to telegram'
     __dependencies__ = 'python-telegram-bot==13.15',
@@ -26,7 +26,7 @@ class Telegram(plugins.Plugin):
         self.logger = logging.getLogger("TelegramPlugin")
         self.options['auto_start'] = True
         self.completed_tasks = 0
-        self.num_tasks = 6
+        self.num_tasks = 7  # Increased for the new backup task
         self.updater = None
         self.start_menu_sent = False
 
@@ -47,7 +47,8 @@ class Telegram(plugins.Plugin):
              InlineKeyboardButton("Read WPA-Sec Cracked", callback_data='read_wpa_sec_cracked'),
              InlineKeyboardButton("Fetch Pwngrid Inbox", callback_data='fetch_pwngrid_inbox')],
             [InlineKeyboardButton("Read Memory & Temp", callback_data='read_memtemp'),
-             InlineKeyboardButton("Take Screenshot", callback_data='take_screenshot')]
+             InlineKeyboardButton("Take Screenshot", callback_data='take_screenshot')],
+            [InlineKeyboardButton("Create Backup", callback_data='create_backup')]  # New option for backup
         ]
 
         response = "Welcome to Pwnagotchi!\n\nPlease select an option:"
@@ -74,6 +75,8 @@ class Telegram(plugins.Plugin):
             self.handle_memtemp(agent, update, context)
         elif query.data == 'take_screenshot':
             self.take_screenshot(agent, update, context)
+        elif query.data == 'create_backup':
+            self.create_backup(agent, update, context)  # New option for backup
 
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
@@ -216,7 +219,8 @@ class Telegram(plugins.Plugin):
                      InlineKeyboardButton("Read WPA-Sec Cracked", callback_data='read_wpa_sec_cracked'),
                      InlineKeyboardButton("Fetch Pwngrid Inbox", callback_data='fetch_pwngrid_inbox')],
                     [InlineKeyboardButton("Read Memory & Temp", callback_data='read_memtemp'),
-                     InlineKeyboardButton("Take Screenshot", callback_data='take_screenshot')]
+                     InlineKeyboardButton("Take Screenshot", callback_data='take_screenshot')],
+                    [InlineKeyboardButton("Create Backup", callback_data='create_backup')]  # New option for backup
                 ]
                 response = "Welcome to Pwnagotchi!\n\nPlease select an option:"
                 reply_markup = InlineKeyboardMarkup(keyboard)
@@ -255,6 +259,37 @@ class Telegram(plugins.Plugin):
     def handle_memtemp(self, agent, update, context):
         reply = f"Memory Usage: {int(pwnagotchi.mem_usage() * 100)}%\n\nCPU Load: {int(pwnagotchi.cpu_load() * 100)}%\n\nCPU Temp: {pwnagotchi.temperature()}c"
         context.bot.send_message(chat_id=update.effective_chat.id, text=reply)
+
+    def create_backup(self, agent, update, context):
+        backup_files = [
+            '/root/brain.json',
+            '/root/.api-report.json',
+            '/root/handshakes/',
+            '/root/peers/',
+            '/etc/pwnagotchi/',
+            '/var/log/pwnagotchi.log'
+        ]
+
+        backup_tar_path = '/root/pwnagotchi-backup.tar.gz'
+
+        try:
+            # Create a tarball
+            subprocess.run(['sudo', 'tar', 'czf', backup_tar_path] + backup_files)
+
+            # Move the tarball to /home/pi/
+            subprocess.run(['sudo', 'mv', backup_tar_path, '/home/pi/'])
+
+            logging.info("Backup created and moved successfully.")
+
+        except Exception as e:
+            logging.error(f"Error creating or moving backup: {e}")
+
+        response = "Backup created and moved successfully."
+        update.effective_message.reply_text(response)
+
+        self.completed_tasks += 1
+        if self.completed_tasks == self.num_tasks:
+            self.terminate_program()
 
     def on_handshake(self, agent, filename, access_point, client_station):
         config = agent.config()
