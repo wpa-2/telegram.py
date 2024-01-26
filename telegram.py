@@ -26,7 +26,7 @@ class Telegram(plugins.Plugin):
         self.logger = logging.getLogger("TelegramPlugin")
         self.options['auto_start'] = True
         self.completed_tasks = 0
-        self.num_tasks = 7  # Increased for the new backup task
+        self.num_tasks = 8  # Increased for the new pwnkill task
         self.updater = None
         self.start_menu_sent = False
 
@@ -48,8 +48,8 @@ class Telegram(plugins.Plugin):
              InlineKeyboardButton("Fetch Pwngrid Inbox", callback_data='fetch_pwngrid_inbox')],
             [InlineKeyboardButton("Read Memory & Temp", callback_data='read_memtemp'),
              InlineKeyboardButton("Take Screenshot", callback_data='take_screenshot')],
-            [InlineKeyboardButton("Create Backup", callback_data='create_backup')]  # New option for backup
-        ]
+            [InlineKeyboardButton("Create Backup", callback_data='create_backup'),  # New option for backup
+             InlineKeyboardButton("pwnkill", callback_data='pwnkill')]]  # New option for pwnkill
 
         response = "Welcome to Pwnagotchi!\n\nPlease select an option:"
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -77,6 +77,8 @@ class Telegram(plugins.Plugin):
             self.take_screenshot(agent, update, context)
         elif query.data == 'create_backup':
             self.create_backup(agent, update, context)  # New option for backup
+        elif query.data == 'pwnkill':
+            self.pwnkill(agent, update, context)  # New option for pwnkill
 
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
@@ -129,6 +131,16 @@ class Telegram(plugins.Plugin):
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
             self.terminate_program()
+
+    def pwnkill(self, agent, update, context):
+        try:
+            response = "Sending pwnkill to pwnagotchi..."
+            update.effective_message.reply_text(response)
+            
+            subprocess.run(['sudo', 'killall', '-USR1', 'pwnagotchi'])
+        except subprocess.CalledProcessError as e:
+            response = f"Error executing pwnkill command: {e}"
+            update.effective_message.reply_text(response)
 
     def read_handshake_pot_files(self, file_path):
         try:
@@ -220,8 +232,9 @@ class Telegram(plugins.Plugin):
                      InlineKeyboardButton("Fetch Pwngrid Inbox", callback_data='fetch_pwngrid_inbox')],
                     [InlineKeyboardButton("Read Memory & Temp", callback_data='read_memtemp'),
                      InlineKeyboardButton("Take Screenshot", callback_data='take_screenshot')],
-                    [InlineKeyboardButton("Create Backup", callback_data='create_backup')]  # New option for backup
-                ]
+                    [InlineKeyboardButton("Create Backup", callback_data='create_backup'),  # New option for backup
+                     InlineKeyboardButton("pwnkill", callback_data='pwnkill')]]  # New option for pwnkill
+                
                 response = "Welcome to Pwnagotchi!\n\nPlease select an option:"
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 bot.send_message(chat_id=self.options['chat_id'], text=response, reply_markup=reply_markup)
@@ -259,7 +272,7 @@ class Telegram(plugins.Plugin):
     def handle_memtemp(self, agent, update, context):
         reply = f"Memory Usage: {int(pwnagotchi.mem_usage() * 100)}%\n\nCPU Load: {int(pwnagotchi.cpu_load() * 100)}%\n\nCPU Temp: {pwnagotchi.temperature()}c"
         context.bot.send_message(chat_id=update.effective_chat.id, text=reply)
-
+        
     def create_backup(self, agent, update, context):
         backup_files = [
             '/root/brain.json',
