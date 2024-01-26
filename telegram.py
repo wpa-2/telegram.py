@@ -11,6 +11,8 @@ from telegram.ext import MessageHandler, Filters, CallbackQueryHandler, Updater,
 import pwnagotchi.plugins as plugins
 from pwnagotchi.voice import Voice
 import pwnagotchi
+from PIL import ImageGrab
+import io
 
 class Telegram(plugins.Plugin):
     __author__ = 'WPA2'
@@ -44,9 +46,10 @@ class Telegram(plugins.Plugin):
             [InlineKeyboardButton("Handshake Count", callback_data='handshake_count'),
              InlineKeyboardButton("Read WPA-Sec Cracked", callback_data='read_wpa_sec_cracked'),
              InlineKeyboardButton("Fetch Pwngrid Inbox", callback_data='fetch_pwngrid_inbox')],
-            [InlineKeyboardButton("Read Memory & Temp", callback_data='read_memtemp')]
+            [InlineKeyboardButton("Read Memory & Temp", callback_data='read_memtemp'),
+             InlineKeyboardButton("Take Screenshot", callback_data='take_screenshot')]
         ]
-        
+
         response = "Welcome to Pwnagotchi!\n\nPlease select an option:"
         reply_markup = InlineKeyboardMarkup(keyboard)
         update.message.reply_text(response, reply_markup=reply_markup)
@@ -54,6 +57,7 @@ class Telegram(plugins.Plugin):
     def button_handler(self, agent, update, context):
         query = update.callback_query
         query.answer()
+
         if query.data == 'reboot':
             self.reboot(agent, update, context)
         elif query.data == 'shutdown':
@@ -68,10 +72,35 @@ class Telegram(plugins.Plugin):
             self.handle_pwngrid_inbox(agent, update, context)
         elif query.data == 'read_memtemp':
             self.handle_memtemp(agent, update, context)
+        elif query.data == 'take_screenshot':
+            self.take_screenshot(agent, update, context)
 
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
             self.terminate_program()
+
+    def take_screenshot(self, agent, update, context):
+        try:
+            display = agent.view()
+            picture_path = '/root/pwnagotchi_screenshot.png'
+
+            # Capture screenshot
+            screenshot = display.image()
+
+            # Rotate the image (180 degrees) before saving
+            rotated_screenshot = screenshot.rotate(180)
+
+            # Save the rotated image
+            rotated_screenshot.save(picture_path, 'png')
+
+            with open(picture_path, 'rb') as photo:
+                context.bot.send_photo(chat_id=update.effective_chat.id, photo=photo)
+
+            response = "Screenshot taken and sent!"
+        except Exception as e:
+            response = f"Error taking screenshot: {e}"
+
+        update.effective_message.reply_text(response)
 
     def reboot(self, agent, update, context):
         response = "Rebooting now..."
@@ -186,7 +215,8 @@ class Telegram(plugins.Plugin):
                     [InlineKeyboardButton("Handshake Count", callback_data='handshake_count'),
                      InlineKeyboardButton("Read WPA-Sec Cracked", callback_data='read_wpa_sec_cracked'),
                      InlineKeyboardButton("Fetch Pwngrid Inbox", callback_data='fetch_pwngrid_inbox')],
-                    [InlineKeyboardButton("Read Memory & Temp", callback_data='read_memtemp')]
+                    [InlineKeyboardButton("Read Memory & Temp", callback_data='read_memtemp'),
+                     InlineKeyboardButton("Take Screenshot", callback_data='take_screenshot')]
                 ]
                 response = "Welcome to Pwnagotchi!\n\nPlease select an option:"
                 reply_markup = InlineKeyboardMarkup(keyboard)
