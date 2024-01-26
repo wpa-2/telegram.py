@@ -8,6 +8,7 @@ import telegram
 import telegram.ext as tg
 import pwnagotchi.plugins as plugins
 from pwnagotchi.voice import Voice
+import pwnagotchi
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import MessageHandler, Filters, CallbackQueryHandler, Updater, CommandHandler
 
@@ -41,7 +42,8 @@ class Telegram(plugins.Plugin):
                      InlineKeyboardButton("Handshake Count", callback_data='handshake_count')],
                     [InlineKeyboardButton("Read WPA-Sec Cracked", callback_data='read_wpa_sec_cracked'),
                      InlineKeyboardButton("Read Banthex Cracked", callback_data='read_banthex_cracked')],
-                    [InlineKeyboardButton("Fetch Pwngrid Inbox", callback_data='fetch_pwngrid_inbox')]]  # Add the new button
+                    [InlineKeyboardButton("Fetch Pwngrid Inbox", callback_data='fetch_pwngrid_inbox')],  # Add the new button
+                    [InlineKeyboardButton("Read Memory & Temp", callback_data='read_memtemp')]]  # Add memtemp button
         response = "Welcome to Pwnagotchi!\n\nPlease select an option:"
         reply_markup = InlineKeyboardMarkup(keyboard)
         update.message.reply_text(response, reply_markup=reply_markup)
@@ -63,6 +65,8 @@ class Telegram(plugins.Plugin):
             self.handshake_count(agent, update, context)
         elif query.data == 'fetch_pwngrid_inbox':  # Handle the new button
             self.handle_pwngrid_inbox(agent, update, context)
+        elif query.data == 'read_memtemp':  # Handle the new button
+            self.handle_memtemp(agent, update, context)
 
         # Increment the number of completed tasks and check if all tasks are completed
         self.completed_tasks += 1
@@ -212,7 +216,8 @@ class Telegram(plugins.Plugin):
                              InlineKeyboardButton("Handshake Count", callback_data='handshake_count')],
                             [InlineKeyboardButton("Read WPA-Sec Cracked", callback_data='read_wpa_sec_cracked'),
                              InlineKeyboardButton("Read Banthex Cracked", callback_data='read_banthex_cracked')],
-                            [InlineKeyboardButton("Fetch Pwngrid Inbox", callback_data='fetch_pwngrid_inbox')]]  # Add the new button
+                            [InlineKeyboardButton("Fetch Pwngrid Inbox", callback_data='fetch_pwngrid_inbox')],  # Add the new button
+                            [InlineKeyboardButton("Read Memory & Temp", callback_data='read_memtemp')]]  # Add memtemp button
                 response = "Welcome to Pwnagotchi!\n\nPlease select an option:"
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 bot.send_message(chat_id=self.options['chat_id'], text=response, reply_markup=reply_markup)
@@ -247,6 +252,11 @@ class Telegram(plugins.Plugin):
                 last_session.save_session_id()
                 display.set('status', 'Telegram notification sent!')
                 display.update(force=True)
+        
+    def handle_memtemp(self, agent, update, context):
+        reply = f"Memory Usage: {int(pwnagotchi.mem_usage() * 100)}%\n\nCPU Load: {int(pwnagotchi.cpu_load() * 100)}%\n\nCPU Temp: {pwnagotchi.temperature()}c"
+        
+        context.bot.send_message(chat_id=update.effective_chat.id, text=reply)
 
     def on_handshake(self, agent, filename, access_point, client_station):
         config = agent.config()
