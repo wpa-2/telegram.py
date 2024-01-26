@@ -13,7 +13,10 @@ https://github.com/wpa-2/tele.py (Here is a simple script to test if you have th
 ```
 __dependencies__ = 
 `sudo pip3 uninstall telegram  python-telegram-bot` 
-`sudo pip3 install python-telegram-bot==13.15
+`sudo pip3 install python-telegram-bot==13.15`
+`For newer OSD like bookworm issues this command`
+`sudo pip3 install python-telegram-bot==13.15 --break-system-packages`
+
 ```
 
 Copy plugin to your custom folder normally here 
