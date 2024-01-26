@@ -1,6 +1,6 @@
 # telegram.py interactive pwnagotchi plugin
 
-![Alt text]([https://cdn.discordapp.com/attachments/807640716040732723/1149691096146903111/2023-09-08_13_53_58-bytezero_Mozilla_Firefox.png](https://cdn.discordapp.com/attachments/807640716040732723/1200541719939272714/Screenshot_2024-01-26_202232.png?ex=65c68e9b&is=65b4199b&hm=461b9e1c4c280940a0c48c856ed75c13b554a1f20f001c1790108e1911856272&))
+![Alt text]([https://cdn.discordapp.com/attachments/807640716040732723/1149691096146903111/2023-09-08_13_53_58-bytezero_Mozilla_Firefox.png](https://cdn.discordapp.com/attachments/807640716040732723/1200541719939272714/Screenshot_2024-01-26_202232.png))
 
 A simple interactive telegram plugin for pwnagotchi the works in manual mode and AI mode, When internet is connected it takes a minute or 3 before you should get a menu 
 pop up. 
