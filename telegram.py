@@ -11,7 +11,11 @@ from telegram.ext import MessageHandler, Filters, CallbackQueryHandler, Updater,
 import pwnagotchi.plugins as plugins
 from pwnagotchi.voice import Voice
 import pwnagotchi
-from PIL import ImageGrab
+try:
+    from PIL import ImageGrab
+except ImportError:
+    import pyscreenshot as ImageGrab
+
 import io
 
 class Telegram(plugins.Plugin):
@@ -136,7 +140,7 @@ class Telegram(plugins.Plugin):
         try:
             response = "Sending pwnkill to pwnagotchi..."
             update.effective_message.reply_text(response)
-            
+
             subprocess.run(['sudo', 'killall', '-USR1', 'pwnagotchi'])
         except subprocess.CalledProcessError as e:
             response = f"Error executing pwnkill command: {e}"
@@ -234,7 +238,7 @@ class Telegram(plugins.Plugin):
                      InlineKeyboardButton("Take Screenshot", callback_data='take_screenshot')],
                     [InlineKeyboardButton("Create Backup", callback_data='create_backup'),  # New option for backup
                      InlineKeyboardButton("pwnkill", callback_data='pwnkill')]]  # New option for pwnkill
-                
+
                 response = "Welcome to Pwnagotchi!\n\nPlease select an option:"
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 bot.send_message(chat_id=self.options['chat_id'], text=response, reply_markup=reply_markup)
@@ -272,7 +276,7 @@ class Telegram(plugins.Plugin):
     def handle_memtemp(self, agent, update, context):
         reply = f"Memory Usage: {int(pwnagotchi.mem_usage() * 100)}%\n\nCPU Load: {int(pwnagotchi.cpu_load() * 100)}%\n\nCPU Temp: {pwnagotchi.temperature()}c"
         context.bot.send_message(chat_id=update.effective_chat.id, text=reply)
-        
+
     def create_backup(self, agent, update, context):
         backup_files = [
             '/root/brain.json',
