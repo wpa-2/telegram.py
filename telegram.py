@@ -8,6 +8,7 @@ from telegram.ext import MessageHandler, Filters, CallbackQueryHandler, Updater
 import pwnagotchi.plugins as plugins
 from pwnagotchi.voice import Voice
 import pwnagotchi
+import time
 
 
 class Telegram(plugins.Plugin):
@@ -88,7 +89,7 @@ class Telegram(plugins.Plugin):
         if query.data == "reboot":
             self.reboot(agent, update, context)
         elif query.data == "shutdown":
-            self.shutdown(agent, update, context)
+            self.shutdown(update)
         elif query.data == "uptime":
             self.uptime(agent, update, context)
         elif query.data == "read_wpa_sec_cracked":
@@ -193,7 +194,6 @@ class Telegram(plugins.Plugin):
         logging.warning("[TELEGRAM] shutting down ...")
 
         from pwnagotchi.ui import view
-        import time
 
         if view.ROOT:
             view.ROOT.on_shutdown()
