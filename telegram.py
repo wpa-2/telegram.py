@@ -1,22 +1,13 @@
 import logging
-import datetime
 import re
 import os
-import time
 import subprocess
 import telegram
-import telegram.ext as tg
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import MessageHandler, Filters, CallbackQueryHandler, Updater, CommandHandler
+from telegram.ext import MessageHandler, Filters, CallbackQueryHandler, Updater
 import pwnagotchi.plugins as plugins
 from pwnagotchi.voice import Voice
 import pwnagotchi
-try:
-    from PIL import ImageGrab
-except ImportError:
-    import pyscreenshot as ImageGrab
-
-import io
 
 class Telegram(plugins.Plugin):
     __author__ = 'WPA2'
