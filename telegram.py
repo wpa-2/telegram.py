@@ -42,7 +42,8 @@ class Telegram(plugins.Plugin):
         )
         dispatcher.add_handler(
             CallbackQueryHandler(
-                lambda update, context: self.button_handler(agent, update, context)
+                lambda update, context: self.button_handler(
+                    agent, update, context)
             )
         )
 
@@ -73,7 +74,8 @@ class Telegram(plugins.Plugin):
                 ),
             ],
             [
-                InlineKeyboardButton("Create Backup", callback_data="create_backup"),
+                InlineKeyboardButton(
+                    "Create Backup", callback_data="create_backup"),
                 InlineKeyboardButton("pwnkill", callback_data="pwnkill"),
             ],
         ]
@@ -88,6 +90,10 @@ class Telegram(plugins.Plugin):
 
         if query.data == "reboot":
             self.reboot(agent, update, context)
+        elif query.data == "reboot_to_manual":
+            self.reboot_mode("MANUAL", update)
+        elif query.data == "reboot_to_auto":
+            self.reboot_mode("AUTO", update)
         elif query.data == "shutdown":
             self.shutdown(update)
         elif query.data == "uptime":
@@ -106,10 +112,14 @@ class Telegram(plugins.Plugin):
             self.create_backup(agent, update, context)
         elif query.data == "pwnkill":
             self.pwnkill(agent, update, context)
-        elif query.data == "reboot_to_manual":
-            self.reboot_mode("MANUAL", update)
-        elif query.data == "reboot_to_auto":
-            self.reboot_mode("AUTO", update)
+        elif query.data == "start":
+            self.start(agent, update, context)
+        elif query.data == "soft_restart":
+            self.soft_restart(update)
+        elif query.data == "soft_restart_to_manual":
+            self.soft_restart_mode("MANUAL", update)
+        elif query.data == "soft_restart_to_auto":
+            self.soft_restart_mode("AUTO", update)
 
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
@@ -130,7 +140,8 @@ class Telegram(plugins.Plugin):
             rotated_screenshot.save(picture_path, "png")
 
             with open(picture_path, "rb") as photo:
-                context.bot.send_photo(chat_id=update.effective_chat.id, photo=photo)
+                context.bot.send_photo(
+                    chat_id=update.effective_chat.id, photo=photo)
 
             response = "Screenshot taken and sent!"
         except Exception as e:
@@ -147,12 +158,16 @@ class Telegram(plugins.Plugin):
                 InlineKeyboardButton(
                     "Reboot to auto mode", callback_data="reboot_to_auto"
                 ),
-            ]
+            ],
+            [
+                InlineKeyboardButton("Go back", callback_data="start"),
+            ],
         ]
 
-        response = "Please select an option:"
+        response = "⚠️  This will restart the device, not the daemon.\nSSH or bluetooth will be interrupted\nPlease select an option:"
         reply_markup = InlineKeyboardMarkup(keyboard)
-        update.effective_message.reply_text(response, reply_markup=reply_markup)
+        update.effective_message.reply_text(
+            response, reply_markup=reply_markup)
 
     def reboot_mode(self, mode, update):
         if mode is not None:
@@ -212,6 +227,47 @@ class Telegram(plugins.Plugin):
             response = f"Error shutting down: {e}"
             update.effective_message.reply_text(response)
 
+    def soft_restart(self, update):
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    "Restart to manual mode", callback_data="soft_restart_to_manual"
+                ),
+                InlineKeyboardButton(
+                    "Restart to auto mode", callback_data="soft_restart_to_auto"
+                ),
+            ],
+            [
+                InlineKeyboardButton("Go back", callback_data="start"),
+            ],
+        ]
+
+        response = "⚠️  This will restart the daemon, not the device.\nSSH or bluetooth will not be interrupted\nPlease select an option:"
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        update.effective_message.reply_text(
+            response, reply_markup=reply_markup)
+
+    def soft_restart_mode(self, mode, update):
+        logging.warning("[TELEGRAM] restarting in %s mode ...", mode)
+        response = f"Restarting in {mode} mode..."
+        update.effective_message.reply_text(response)
+
+        if view.ROOT:
+            view.ROOT.on_custom(f"Restarting daemon to {mode}")
+            sleep(10)
+        try:
+            mode = mode.upper()
+            if mode == "AUTO":
+                subprocess.run(["sudo", "touch", "/root/.pwnagotchi-auto"])
+            else:
+                subprocess.run(["sudo", "touch", "/root/.pwnagotchi-manual"])
+
+            subprocess.run(["sudo", "systemctl", "restart", "pwnagotchi"])
+        except Exception as e:
+            logging.error(f"[TELEGRAM] Error restarting: {e}")
+            response = f"Error restarting: {e}"
+            update.effective_message.reply_text(response)
+
     def uptime(self, agent, update, context):
         with open("/proc/uptime", "r") as f:
             uptime_seconds = float(f.readline().split()[0])
@@ -249,7 +305,7 @@ class Telegram(plugins.Plugin):
             formatted_output = [f"{match[0]}:{match[1]}" for match in matches]
             chunk_size = 5
             chunks = [
-                formatted_output[i : i + chunk_size]
+                formatted_output[i: i + chunk_size]
                 for i in range(0, len(formatted_output), chunk_size)
             ]
             chunk_strings = ["\n".join(chunk) for chunk in chunks]
@@ -262,7 +318,8 @@ class Telegram(plugins.Plugin):
         file_path = "/root/handshakes/wpa-sec.cracked.potfile"
         chunks = self.read_handshake_pot_files(file_path)
         if not chunks or not any(chunk.strip() for chunk in chunks):
-            update.effective_message.reply_text("The wpa-sec.cracked.potfile is empty.")
+            update.effective_message.reply_text(
+                "The wpa-sec.cracked.potfile is empty.")
         else:
             for chunk in chunks:
                 update.effective_message.reply_text(chunk)
@@ -298,13 +355,16 @@ class Telegram(plugins.Plugin):
                 message = line.split("│")[1:4]
                 formatted_message = (
                     "ID: "
-                    + message[0].strip().replace("\x1b[2m", "").replace("\x1b[0m", "")
+                    + message[0].strip().replace("\x1b[2m",
+                                                 "").replace("\x1b[0m", "")
                     + "\n"
                     + "Date: "
-                    + message[1].strip().replace("\x1b[2m", "").replace("\x1b[0m", "")
+                    + message[1].strip().replace("\x1b[2m",
+                                                 "").replace("\x1b[0m", "")
                     + "\n"
                     + "Sender: "
-                    + message[2].strip().replace("\x1b[2m", "").replace("\x1b[0m", "")
+                    + message[2].strip().replace("\x1b[2m",
+                                                 "").replace("\x1b[0m", "")
                 )
                 formatted_output.append(formatted_message)
 
@@ -316,7 +376,8 @@ class Telegram(plugins.Plugin):
     def handle_pwngrid_inbox(self, agent, update, context):
         reply = self.fetch_inbox()
         if reply:
-            context.bot.send_message(chat_id=update.effective_chat.id, text=reply)
+            context.bot.send_message(
+                chat_id=update.effective_chat.id, text=reply)
         else:
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
@@ -346,7 +407,8 @@ class Telegram(plugins.Plugin):
                 keyboard = [
                     [
                         InlineKeyboardButton("Reboot", callback_data="reboot"),
-                        InlineKeyboardButton("Shutdown", callback_data="shutdown"),
+                        InlineKeyboardButton(
+                            "Shutdown", callback_data="shutdown"),
                         InlineKeyboardButton("Uptime", callback_data="uptime"),
                     ],
                     [
@@ -372,7 +434,8 @@ class Telegram(plugins.Plugin):
                         InlineKeyboardButton(
                             "Create Backup", callback_data="create_backup"
                         ),
-                        InlineKeyboardButton("pwnkill", callback_data="pwnkill"),
+                        InlineKeyboardButton(
+                            "pwnkill", callback_data="pwnkill"),
                     ],
                 ]
 
@@ -414,7 +477,8 @@ class Telegram(plugins.Plugin):
 
                 if self.options["send_picture"] is True:
                     bot.sendPhoto(
-                        chat_id=self.options["chat_id"], photo=open(picture, "rb")
+                        chat_id=self.options["chat_id"], photo=open(
+                            picture, "rb")
                     )
                     self.logger.info("telegram: picture sent")
 
@@ -440,7 +504,8 @@ class Telegram(plugins.Plugin):
 
         try:
             # Create a tarball
-            subprocess.run(["sudo", "tar", "czf", backup_tar_path] + backup_files)
+            subprocess.run(
+                ["sudo", "tar", "czf", backup_tar_path] + backup_files)
 
             # Move the tarball to /home/pi/
             subprocess.run(["sudo", "mv", backup_tar_path, "/home/pi/"])
