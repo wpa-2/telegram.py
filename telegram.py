@@ -75,7 +75,10 @@ class Telegram(plugins.Plugin):
     def start(self, agent, update, context):
         response = "Welcome to Pwnagotchi!\n\nPlease select an option:"
         reply_markup = InlineKeyboardMarkup(main_menu)
-        update.message.reply_text(response, reply_markup=reply_markup)
+        try:
+            update.message.reply_text(response, reply_markup=reply_markup)
+        except AttributeError:
+            update.effective_message.reply_text(response, reply_markup=reply_markup)
 
     def button_handler(self, agent, update, context):
         query = update.callback_query
