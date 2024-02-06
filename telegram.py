@@ -151,7 +151,7 @@ class Telegram(plugins.Plugin):
 
         response = "Please select an option:"
         reply_markup = InlineKeyboardMarkup(keyboard)
-        update.message.reply_text(response, reply_markup=reply_markup)
+        update.effective_message.reply_text(response, reply_markup=reply_markup)
 
     def reboot_mode(self, mode, update):
         if mode is not None:
