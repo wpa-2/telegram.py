@@ -38,6 +38,9 @@ main_menu = [
         InlineKeyboardButton("Create Backup", callback_data="create_backup"),
         InlineKeyboardButton("pwnkill", callback_data="pwnkill"),
     ],
+    [
+        InlineKeyboardButton("Restart Daemon", callback_data="soft_restart"),
+    ]
 ]
 
 
