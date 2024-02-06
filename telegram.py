@@ -168,7 +168,7 @@ class Telegram(plugins.Plugin):
             update.effective_message.reply_text(response)
 
             if view.ROOT:
-                view.ROOT.on_rebooting()
+                view.ROOT.on_custom("Rebooting...")
                 # give it some time to refresh the ui
                 sleep(10)
 
