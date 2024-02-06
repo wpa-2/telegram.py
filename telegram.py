@@ -73,9 +73,7 @@ class Telegram(plugins.Plugin):
                 ),
             ],
             [
-                InlineKeyboardButton(
-                    "Create Backup", callback_data="create_backup"
-                ),
+                InlineKeyboardButton("Create Backup", callback_data="create_backup"),
                 InlineKeyboardButton("pwnkill", callback_data="pwnkill"),
             ],
         ]
@@ -164,7 +162,6 @@ class Telegram(plugins.Plugin):
             reboot_text = "rebooting..."
 
         try:
-
             response = reboot_text
             logging.warning("[TELEGRAM]", reboot_text)
 
@@ -176,17 +173,17 @@ class Telegram(plugins.Plugin):
                 sleep(10)
 
             if mode == "AUTO":
-                os.system("touch /root/.pwnagotchi-auto")
+                subprocess.run(["sudo", "touch", "/root/.pwnagotchi-auto"])
             elif mode == "MANU":
-                os.system("touch /root/.pwnagotchi-manual")
+                subprocess.run(["sudo", "touch", "/root/.pwnagotchi-manual"])
 
             logging.warning("[TELEGRAM] syncing...")
 
             for m in fs.mounts:
                 m.sync()
 
-            os.system("sync")
-            os.system("shutdown -r now")
+            subprocess.run(["sudo", "sync"])
+            subprocess.run(["sudo", "reboot"])
         except Exception as e:
             logging.error(f"[TELEGRAM] Error rebooting: {e}")
             response = f"Error rebooting: {e}"
@@ -198,7 +195,6 @@ class Telegram(plugins.Plugin):
         logging.warning("[TELEGRAM] shutting down ...")
 
         try:
-
             if view.ROOT:
                 view.ROOT.on_shutdown()
                 # Give it some time to refresh the ui
@@ -209,13 +205,12 @@ class Telegram(plugins.Plugin):
             for m in fs.mounts:
                 m.sync()
 
-            os.system("sync")
-            os.system("halt")
+            subprocess.run(["sudo", "sync"])
+            subprocess.run(["sudo", "halt"])
         except Exception as e:
             logging.error(f"[TELEGRAM] Error shutting down: {e}")
             response = f"Error shutting down: {e}"
             update.effective_message.reply_text(response)
-
 
     def uptime(self, agent, update, context):
         with open("/proc/uptime", "r") as f:
