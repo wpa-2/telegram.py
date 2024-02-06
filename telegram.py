@@ -14,33 +14,28 @@ from telegram.ext import MessageHandler, Filters, CallbackQueryHandler, Updater
 
 main_menu = [
     [
-        InlineKeyboardButton("Reboot", callback_data="reboot"),
-        InlineKeyboardButton("Shutdown", callback_data="shutdown"),
-        InlineKeyboardButton("Uptime", callback_data="uptime"),
+        InlineKeyboardButton("🔄 Reboot", callback_data="reboot"),
+        InlineKeyboardButton("❌ Shutdown", callback_data="shutdown"),
+        InlineKeyboardButton("⏰ Uptime", callback_data="uptime"),
     ],
     [
+        InlineKeyboardButton("🤝 Handshake Count", callback_data="handshake_count"),
         InlineKeyboardButton(
-            "Handshake Count", callback_data="handshake_count"),
-        InlineKeyboardButton(
-            "Read WPA-Sec Cracked", callback_data="read_wpa_sec_cracked"
+            "🔓 Read WPA-Sec Cracked", callback_data="read_wpa_sec_cracked"
         ),
         InlineKeyboardButton(
-            "Fetch Pwngrid Inbox", callback_data="fetch_pwngrid_inbox"
+            "📬 Fetch Pwngrid Inbox", callback_data="fetch_pwngrid_inbox"
         ),
     ],
     [
-        InlineKeyboardButton("Read Memory & Temp",
-                             callback_data="read_memtemp"),
-        InlineKeyboardButton(
-            "Take Screenshot", callback_data="take_screenshot"),
+        InlineKeyboardButton("🧠 Read Memory & Temp", callback_data="read_memtemp"),
+        InlineKeyboardButton("🎨 Take Screenshot", callback_data="take_screenshot"),
+        InlineKeyboardButton("💾 Create Backup", callback_data="create_backup"),
     ],
     [
-        InlineKeyboardButton("Create Backup", callback_data="create_backup"),
-        InlineKeyboardButton("pwnkill", callback_data="pwnkill"),
+        InlineKeyboardButton("⚙️  Kill the daemon", callback_data="pwnkill"),
+        InlineKeyboardButton("🔁 Restart Daemon", callback_data="soft_restart"),
     ],
-    [
-        InlineKeyboardButton("Restart Daemon", callback_data="soft_restart"),
-    ]
 ]
 
 
@@ -73,8 +68,7 @@ class Telegram(plugins.Plugin):
         )
         dispatcher.add_handler(
             CallbackQueryHandler(
-                lambda update, context: self.button_handler(
-                    agent, update, context)
+                lambda update, context: self.button_handler(agent, update, context)
             )
         )
 
@@ -82,7 +76,6 @@ class Telegram(plugins.Plugin):
         response = "Welcome to Pwnagotchi!\n\nPlease select an option:"
         reply_markup = InlineKeyboardMarkup(main_menu)
         update.message.reply_text(response, reply_markup=reply_markup)
-
 
     def button_handler(self, agent, update, context):
         query = update.callback_query
@@ -140,8 +133,7 @@ class Telegram(plugins.Plugin):
             rotated_screenshot.save(picture_path, "png")
 
             with open(picture_path, "rb") as photo:
-                context.bot.send_photo(
-                    chat_id=update.effective_chat.id, photo=photo)
+                context.bot.send_photo(chat_id=update.effective_chat.id, photo=photo)
 
             response = "Screenshot taken and sent!"
         except Exception as e:
@@ -166,8 +158,7 @@ class Telegram(plugins.Plugin):
 
         response = "⚠️  This will restart the device, not the daemon.\nSSH or bluetooth will be interrupted\nPlease select an option:"
         reply_markup = InlineKeyboardMarkup(keyboard)
-        update.effective_message.reply_text(
-            response, reply_markup=reply_markup)
+        update.effective_message.reply_text(response, reply_markup=reply_markup)
 
     def reboot_mode(self, mode, update):
         if mode is not None:
@@ -244,8 +235,7 @@ class Telegram(plugins.Plugin):
 
         response = "⚠️  This will restart the daemon, not the device.\nSSH or bluetooth will not be interrupted\nPlease select an option:"
         reply_markup = InlineKeyboardMarkup(keyboard)
-        update.effective_message.reply_text(
-            response, reply_markup=reply_markup)
+        update.effective_message.reply_text(response, reply_markup=reply_markup)
 
     def soft_restart_mode(self, mode, update):
         logging.warning("[TELEGRAM] restarting in %s mode ...", mode)
@@ -305,7 +295,7 @@ class Telegram(plugins.Plugin):
             formatted_output = [f"{match[0]}:{match[1]}" for match in matches]
             chunk_size = 5
             chunks = [
-                formatted_output[i: i + chunk_size]
+                formatted_output[i : i + chunk_size]
                 for i in range(0, len(formatted_output), chunk_size)
             ]
             chunk_strings = ["\n".join(chunk) for chunk in chunks]
@@ -318,8 +308,7 @@ class Telegram(plugins.Plugin):
         file_path = "/root/handshakes/wpa-sec.cracked.potfile"
         chunks = self.read_handshake_pot_files(file_path)
         if not chunks or not any(chunk.strip() for chunk in chunks):
-            update.effective_message.reply_text(
-                "The wpa-sec.cracked.potfile is empty.")
+            update.effective_message.reply_text("The wpa-sec.cracked.potfile is empty.")
         else:
             for chunk in chunks:
                 update.effective_message.reply_text(chunk)
@@ -355,16 +344,13 @@ class Telegram(plugins.Plugin):
                 message = line.split("│")[1:4]
                 formatted_message = (
                     "ID: "
-                    + message[0].strip().replace("\x1b[2m",
-                                                 "").replace("\x1b[0m", "")
+                    + message[0].strip().replace("\x1b[2m", "").replace("\x1b[0m", "")
                     + "\n"
                     + "Date: "
-                    + message[1].strip().replace("\x1b[2m",
-                                                 "").replace("\x1b[0m", "")
+                    + message[1].strip().replace("\x1b[2m", "").replace("\x1b[0m", "")
                     + "\n"
                     + "Sender: "
-                    + message[2].strip().replace("\x1b[2m",
-                                                 "").replace("\x1b[0m", "")
+                    + message[2].strip().replace("\x1b[2m", "").replace("\x1b[0m", "")
                 )
                 formatted_output.append(formatted_message)
 
@@ -376,8 +362,7 @@ class Telegram(plugins.Plugin):
     def handle_pwngrid_inbox(self, agent, update, context):
         reply = self.fetch_inbox()
         if reply:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id, text=reply)
+            context.bot.send_message(chat_id=update.effective_chat.id, text=reply)
         else:
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
@@ -395,6 +380,7 @@ class Telegram(plugins.Plugin):
         try:
             logging.info("[TELEGRAM] Connecting to Telegram...")
             bot = telegram.Bot(self.options["bot_token"])
+            bot_name = self.options["bot_name"]
 
             if self.updater is None:
                 self.updater = Updater(
@@ -404,7 +390,7 @@ class Telegram(plugins.Plugin):
                 self.updater.start_polling()
 
             if not self.start_menu_sent:
-                response = "Welcome to Pwnagotchi!\n\nPlease select an option:"
+                response = f"Welcome to {bot_name}!\n\nPlease select an option:"
                 reply_markup = InlineKeyboardMarkup(main_menu)
                 bot.send_message(
                     chat_id=self.options["chat_id"],
@@ -442,8 +428,7 @@ class Telegram(plugins.Plugin):
 
                 if self.options["send_picture"] is True:
                     bot.sendPhoto(
-                        chat_id=self.options["chat_id"], photo=open(
-                            picture, "rb")
+                        chat_id=self.options["chat_id"], photo=open(picture, "rb")
                     )
                     self.logger.info("telegram: picture sent")
 
@@ -469,8 +454,7 @@ class Telegram(plugins.Plugin):
 
         try:
             # Create a tarball
-            subprocess.run(
-                ["sudo", "tar", "czf", backup_tar_path] + backup_files)
+            subprocess.run(["sudo", "tar", "czf", backup_tar_path] + backup_files)
 
             # Move the tarball to /home/pi/
             subprocess.run(["sudo", "mv", backup_tar_path, "/home/pi/"])
