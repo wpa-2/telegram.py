@@ -71,9 +71,13 @@ class Telegram(plugins.Plugin):
         elif query.data == 'take_screenshot':
             self.take_screenshot(agent, update, context)
         elif query.data == 'create_backup':
-            self.create_backup(agent, update, context)  # New option for backup
+            self.create_backup(agent, update, context)
         elif query.data == 'pwnkill':
-            self.pwnkill(agent, update, context)  # New option for pwnkill
+            self.pwnkill(agent, update, context)
+        elif query.data == 'reboot_to_manual':
+            self.reboot_mode("MANUAL", update)
+        elif query.data == 'reboot_to_auto':
+            self.reboot_mode("AUTO", update)
 
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
@@ -103,14 +107,66 @@ class Telegram(plugins.Plugin):
         update.effective_message.reply_text(response)
 
     def reboot(self, agent, update, context):
-        response = "Rebooting now..."
-        update.effective_message.reply_text(response)
-        subprocess.run(['sudo', 'reboot'])
+        keyboard = [
+            [InlineKeyboardButton("Reboot to manual mode", callback_data='reboot_to_manual'),
+             InlineKeyboardButton("Reboot to auto mode", callback_data='reboot_to_auto')]
+        ]
 
-    def shutdown(self, agent, update, context):
+        response = "Please select an option:"
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        update.message.reply_text(response, reply_markup=reply_markup)
+
+    def reboot_mode(self, mode, update):
+        if mode is not None:
+            mode = mode.upper()
+            reboot_text = f"rebooting in {mode} mode"
+        else:
+            reboot_text = "rebooting..."
+
+        response = reboot_text
+        logging.warning(reboot_text)
+
+        update.effective_message.reply_text(response)
+
+        from pwnagotchi.ui import view
+        if view.ROOT:
+            view.ROOT.on_rebooting()
+            # give it some time to refresh the ui
+            time.sleep(10)
+
+        if mode == 'AUTO':
+            os.system("touch /root/.pwnagotchi-auto")
+        elif mode == 'MANU':
+            os.system("touch /root/.pwnagotchi-manual")
+
+        logging.warning("syncing...")
+
+        from pwnagotchi import fs
+        for m in fs.mounts:
+            m.sync()
+
+        os.system("sync")
+        os.system("shutdown -r now")
+
+    def shutdown(self, update):
         response = "Shutting down now..."
         update.effective_message.reply_text(response)
-        subprocess.run(['sudo', 'shutdown', '-h', 'now'])
+        logging.warning("shutting down ...")
+
+        from pwnagotchi.ui import view
+        import time
+        if view.ROOT:
+            view.ROOT.on_shutdown()
+            # Give it some time to refresh the ui
+            time.sleep(10)
+
+        logging.warning("syncing...")
+        from pwnagotchi import fs
+        for m in fs.mounts:
+            m.sync()
+
+        os.system("sync")
+        os.system("halt")
 
     def uptime(self, agent, update, context):
         with open('/proc/uptime', 'r') as f:
