@@ -18,7 +18,7 @@ class Telegram(plugins.Plugin):
     __dependencies__ = ("python-telegram-bot==13.15",)
 
     def on_loaded(self):
-        logging.info("telegram plugin loaded.")
+        logging.info("[TELEGRAM] telegram plugin loaded.")
         self.logger = logging.getLogger("TelegramPlugin")
         self.options["auto_start"] = True
         self.completed_tasks = 0
@@ -161,7 +161,7 @@ class Telegram(plugins.Plugin):
             reboot_text = "rebooting..."
 
         response = reboot_text
-        logging.warning(reboot_text)
+        logging.warning("[TELEGRAM]", reboot_text)
 
         update.effective_message.reply_text(response)
 
@@ -177,7 +177,7 @@ class Telegram(plugins.Plugin):
         elif mode == "MANU":
             os.system("touch /root/.pwnagotchi-manual")
 
-        logging.warning("syncing...")
+        logging.warning("[TELEGRAM] syncing...")
 
         from pwnagotchi import fs
 
@@ -190,7 +190,7 @@ class Telegram(plugins.Plugin):
     def shutdown(self, update):
         response = "Shutting down now..."
         update.effective_message.reply_text(response)
-        logging.warning("shutting down ...")
+        logging.warning("[TELEGRAM] shutting down ...")
 
         from pwnagotchi.ui import view
         import time
@@ -200,7 +200,7 @@ class Telegram(plugins.Plugin):
             # Give it some time to refresh the ui
             time.sleep(10)
 
-        logging.warning("syncing...")
+        logging.warning("[TELEGRAM] syncing...")
         from pwnagotchi import fs
 
         for m in fs.mounts:
@@ -329,7 +329,7 @@ class Telegram(plugins.Plugin):
         last_session = agent.last_session
 
         try:
-            logging.info("Connecting to Telegram...")
+            logging.info("[TELEGRAM] Connecting to Telegram...")
             bot = telegram.Bot(self.options["bot_token"])
 
             if self.updater is None:
@@ -442,10 +442,10 @@ class Telegram(plugins.Plugin):
             # Move the tarball to /home/pi/
             subprocess.run(["sudo", "mv", backup_tar_path, "/home/pi/"])
 
-            logging.info("Backup created and moved successfully.")
+            logging.info("[TELEGRAM] Backup created and moved successfully.")
 
         except Exception as e:
-            logging.error(f"Error creating or moving backup: {e}")
+            logging.error(f"[TELEGRAM] Error creating or moving backup: {e}")
 
         response = "Backup created and moved successfully."
         update.effective_message.reply_text(response)
@@ -478,7 +478,7 @@ class Telegram(plugins.Plugin):
             self.logger.exception("Error while sending on Telegram")
 
     def terminate_program(self):
-        logging.info("All tasks completed. Terminating program.")
+        logging.info("[TELEGRAM] All tasks completed. Terminating program.")
 
 
 if __name__ == "__main__":
