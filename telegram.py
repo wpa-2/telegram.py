@@ -12,6 +12,34 @@ import pwnagotchi.plugins as plugins
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import MessageHandler, Filters, CallbackQueryHandler, Updater
 
+main_menu = [
+    [
+        InlineKeyboardButton("Reboot", callback_data="reboot"),
+        InlineKeyboardButton("Shutdown", callback_data="shutdown"),
+        InlineKeyboardButton("Uptime", callback_data="uptime"),
+    ],
+    [
+        InlineKeyboardButton(
+            "Handshake Count", callback_data="handshake_count"),
+        InlineKeyboardButton(
+            "Read WPA-Sec Cracked", callback_data="read_wpa_sec_cracked"
+        ),
+        InlineKeyboardButton(
+            "Fetch Pwngrid Inbox", callback_data="fetch_pwngrid_inbox"
+        ),
+    ],
+    [
+        InlineKeyboardButton("Read Memory & Temp",
+                             callback_data="read_memtemp"),
+        InlineKeyboardButton(
+            "Take Screenshot", callback_data="take_screenshot"),
+    ],
+    [
+        InlineKeyboardButton("Create Backup", callback_data="create_backup"),
+        InlineKeyboardButton("pwnkill", callback_data="pwnkill"),
+    ],
+]
+
 
 class Telegram(plugins.Plugin):
     __author__ = "WPA2"
@@ -48,41 +76,10 @@ class Telegram(plugins.Plugin):
         )
 
     def start(self, agent, update, context):
-        keyboard = [
-            [
-                InlineKeyboardButton("Reboot", callback_data="reboot"),
-                InlineKeyboardButton("Shutdown", callback_data="shutdown"),
-                InlineKeyboardButton("Uptime", callback_data="uptime"),
-            ],
-            [
-                InlineKeyboardButton(
-                    "Handshake Count", callback_data="handshake_count"
-                ),
-                InlineKeyboardButton(
-                    "Read WPA-Sec Cracked", callback_data="read_wpa_sec_cracked"
-                ),
-                InlineKeyboardButton(
-                    "Fetch Pwngrid Inbox", callback_data="fetch_pwngrid_inbox"
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    "Read Memory & Temp", callback_data="read_memtemp"
-                ),
-                InlineKeyboardButton(
-                    "Take Screenshot", callback_data="take_screenshot"
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    "Create Backup", callback_data="create_backup"),
-                InlineKeyboardButton("pwnkill", callback_data="pwnkill"),
-            ],
-        ]
-
         response = "Welcome to Pwnagotchi!\n\nPlease select an option:"
-        reply_markup = InlineKeyboardMarkup(keyboard)
+        reply_markup = InlineKeyboardMarkup(main_menu)
         update.message.reply_text(response, reply_markup=reply_markup)
+
 
     def button_handler(self, agent, update, context):
         query = update.callback_query
@@ -404,43 +401,8 @@ class Telegram(plugins.Plugin):
                 self.updater.start_polling()
 
             if not self.start_menu_sent:
-                keyboard = [
-                    [
-                        InlineKeyboardButton("Reboot", callback_data="reboot"),
-                        InlineKeyboardButton(
-                            "Shutdown", callback_data="shutdown"),
-                        InlineKeyboardButton("Uptime", callback_data="uptime"),
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            "Handshake Count", callback_data="handshake_count"
-                        ),
-                        InlineKeyboardButton(
-                            "Read WPA-Sec Cracked", callback_data="read_wpa_sec_cracked"
-                        ),
-                        InlineKeyboardButton(
-                            "Fetch Pwngrid Inbox", callback_data="fetch_pwngrid_inbox"
-                        ),
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            "Read Memory & Temp", callback_data="read_memtemp"
-                        ),
-                        InlineKeyboardButton(
-                            "Take Screenshot", callback_data="take_screenshot"
-                        ),
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            "Create Backup", callback_data="create_backup"
-                        ),
-                        InlineKeyboardButton(
-                            "pwnkill", callback_data="pwnkill"),
-                    ],
-                ]
-
                 response = "Welcome to Pwnagotchi!\n\nPlease select an option:"
-                reply_markup = InlineKeyboardMarkup(keyboard)
+                reply_markup = InlineKeyboardMarkup(main_menu)
                 bot.send_message(
                     chat_id=self.options["chat_id"],
                     text=response,
