@@ -1,14 +1,16 @@
-import logging
 import re
 import os
-import subprocess
+import logging
 import telegram
+import subprocess
+import pwnagotchi
+from time import sleep
+from pwnagotchi import fs
+from pwnagotchi.ui import view
+from pwnagotchi.voice import Voice
+import pwnagotchi.plugins as plugins
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import MessageHandler, Filters, CallbackQueryHandler, Updater
-import pwnagotchi.plugins as plugins
-from pwnagotchi.voice import Voice
-import pwnagotchi
-import time
 
 
 class Telegram(plugins.Plugin):
@@ -73,10 +75,10 @@ class Telegram(plugins.Plugin):
             [
                 InlineKeyboardButton(
                     "Create Backup", callback_data="create_backup"
-                ),  # New option for backup
+                ),
                 InlineKeyboardButton("pwnkill", callback_data="pwnkill"),
             ],
-        ]  # New option for pwnkill
+        ]
 
         response = "Welcome to Pwnagotchi!\n\nPlease select an option:"
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -161,53 +163,59 @@ class Telegram(plugins.Plugin):
         else:
             reboot_text = "rebooting..."
 
-        response = reboot_text
-        logging.warning("[TELEGRAM]", reboot_text)
+        try:
 
-        update.effective_message.reply_text(response)
+            response = reboot_text
+            logging.warning("[TELEGRAM]", reboot_text)
 
-        from pwnagotchi.ui import view
+            update.effective_message.reply_text(response)
 
-        if view.ROOT:
-            view.ROOT.on_rebooting()
-            # give it some time to refresh the ui
-            time.sleep(10)
+            if view.ROOT:
+                view.ROOT.on_rebooting()
+                # give it some time to refresh the ui
+                sleep(10)
 
-        if mode == "AUTO":
-            os.system("touch /root/.pwnagotchi-auto")
-        elif mode == "MANU":
-            os.system("touch /root/.pwnagotchi-manual")
+            if mode == "AUTO":
+                os.system("touch /root/.pwnagotchi-auto")
+            elif mode == "MANU":
+                os.system("touch /root/.pwnagotchi-manual")
 
-        logging.warning("[TELEGRAM] syncing...")
+            logging.warning("[TELEGRAM] syncing...")
 
-        from pwnagotchi import fs
+            for m in fs.mounts:
+                m.sync()
 
-        for m in fs.mounts:
-            m.sync()
-
-        os.system("sync")
-        os.system("shutdown -r now")
+            os.system("sync")
+            os.system("shutdown -r now")
+        except Exception as e:
+            logging.error(f"[TELEGRAM] Error rebooting: {e}")
+            response = f"Error rebooting: {e}"
+            update.effective_message.reply_text(response)
 
     def shutdown(self, update):
         response = "Shutting down now..."
         update.effective_message.reply_text(response)
         logging.warning("[TELEGRAM] shutting down ...")
 
-        from pwnagotchi.ui import view
+        try:
 
-        if view.ROOT:
-            view.ROOT.on_shutdown()
-            # Give it some time to refresh the ui
-            time.sleep(10)
+            if view.ROOT:
+                view.ROOT.on_shutdown()
+                # Give it some time to refresh the ui
+                sleep(10)
 
-        logging.warning("[TELEGRAM] syncing...")
-        from pwnagotchi import fs
+            logging.warning("[TELEGRAM] syncing...")
 
-        for m in fs.mounts:
-            m.sync()
+            for m in fs.mounts:
+                m.sync()
 
-        os.system("sync")
-        os.system("halt")
+            os.system("sync")
+            os.system("halt")
+        except Exception as e:
+            logging.error(f"[TELEGRAM] Error shutting down: {e}")
+            response = f"Error shutting down: {e}"
+            update.effective_message.reply_text(response)
+
 
     def uptime(self, agent, update, context):
         with open("/proc/uptime", "r") as f:
@@ -368,10 +376,10 @@ class Telegram(plugins.Plugin):
                     [
                         InlineKeyboardButton(
                             "Create Backup", callback_data="create_backup"
-                        ),  # New option for backup
+                        ),
                         InlineKeyboardButton("pwnkill", callback_data="pwnkill"),
                     ],
-                ]  # New option for pwnkill
+                ]
 
                 response = "Welcome to Pwnagotchi!\n\nPlease select an option:"
                 reply_markup = InlineKeyboardMarkup(keyboard)
