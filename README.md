@@ -1,6 +1,7 @@
-# telegram.py interactive pwnagotchi plugin
+# telegram.py Interactive pwnagotchi plugin
 
-![Screenshot 2024-01-26 233229](https://github.com/wpa-2/telegram.py/assets/9049886/d03338e8-ee2e-4f77-9697-4fd420daba68)
+
+![Screenshot 2024-02-07 215237](https://github.com/wpa-2/telegram.py/assets/9049886/7eda7c8b-12ad-4d10-a330-3f5587bf14f9)
 
 
 A simple interactive telegram plugin for pwnagotchi the works in manual mode and AI mode, When internet is connected it takes a minute or 3 before you should get a menu
@@ -45,7 +46,7 @@ Edit your config.toml wit there details
 main.plugins.telegram.enabled = true
 main.plugins.telegram.bot_token = "BOT ID"
 main.plugins.telegram.bot_name = "pwnagotchi"
-main.plugins.telegram.chat_id = "CHAT ID"
+main.plugins.telegram.chat_id = CHAT ID
 main.plugins.telegram.send_picture = true
 main.plugins.telegram.send_message = true
 ```
