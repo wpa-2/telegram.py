@@ -77,56 +77,59 @@ class Telegram(plugins.Plugin):
         )
 
     def start(self, agent, update, context):
-        response = "Welcome to Pwnagotchi!\n\nPlease select an option:"
-        reply_markup = InlineKeyboardMarkup(main_menu)
-        try:
-            update.message.reply_text(response, reply_markup=reply_markup)
-        except AttributeError:
-            update.effective_message.reply_text(
-                response, reply_markup=reply_markup)
+        # Verify if hte user is authorized
+        if update.effective_chat.id == self.options["chat_id"]:
+            response = "Welcome to Pwnagotchi!\n\nPlease select an option:"
+            reply_markup = InlineKeyboardMarkup(main_menu)
+            try:
+                update.message.reply_text(response, reply_markup=reply_markup)
+            except AttributeError:
+                update.effective_message.reply_text(
+                    response, reply_markup=reply_markup)
 
     def button_handler(self, agent, update, context):
-        query = update.callback_query
-        query.answer()
+        if update.effective_chat.id == self.options["chat_id"]:
+            query = update.callback_query
+            query.answer()
 
-        if query.data == "reboot":
-            self.reboot(agent, update, context)
-        elif query.data == "reboot_to_manual":
-            self.reboot_mode("MANUAL", update)
-        elif query.data == "reboot_to_auto":
-            self.reboot_mode("AUTO", update)
-        elif query.data == "shutdown":
-            self.shutdown(update)
-        elif query.data == "uptime":
-            self.uptime(agent, update, context)
-        elif query.data == "read_wpa_sec_cracked":
-            self.read_wpa_sec_cracked(agent, update, context)
-        elif query.data == "handshake_count":
-            self.handshake_count(agent, update, context)
-        elif query.data == "fetch_pwngrid_inbox":
-            self.handle_pwngrid_inbox(agent, update, context)
-        elif query.data == "read_memtemp":
-            self.handle_memtemp(agent, update, context)
-        elif query.data == "take_screenshot":
-            self.take_screenshot(agent, update, context)
-        elif query.data == "create_backup":
-            self.create_backup(agent, update, context)
-        elif query.data == "pwnkill":
-            self.pwnkill(agent, update, context)
-        elif query.data == "start":
-            self.start(agent, update, context)
-        elif query.data == "soft_restart":
-            self.soft_restart(update)
-        elif query.data == "soft_restart_to_manual":
-            self.soft_restart_mode("MANUAL", update)
-        elif query.data == "soft_restart_to_auto":
-            self.soft_restart_mode("AUTO", update)
-        elif query.data == "send_backup":
-            self.send_backup(update)
+            if query.data == "reboot":
+                self.reboot(agent, update, context)
+            elif query.data == "reboot_to_manual":
+                self.reboot_mode("MANUAL", update)
+            elif query.data == "reboot_to_auto":
+                self.reboot_mode("AUTO", update)
+            elif query.data == "shutdown":
+                self.shutdown(update)
+            elif query.data == "uptime":
+                self.uptime(agent, update, context)
+            elif query.data == "read_wpa_sec_cracked":
+                self.read_wpa_sec_cracked(agent, update, context)
+            elif query.data == "handshake_count":
+                self.handshake_count(agent, update, context)
+            elif query.data == "fetch_pwngrid_inbox":
+                self.handle_pwngrid_inbox(agent, update, context)
+            elif query.data == "read_memtemp":
+                self.handle_memtemp(agent, update, context)
+            elif query.data == "take_screenshot":
+                self.take_screenshot(agent, update, context)
+            elif query.data == "create_backup":
+                self.create_backup(agent, update, context)
+            elif query.data == "pwnkill":
+                self.pwnkill(agent, update, context)
+            elif query.data == "start":
+                self.start(agent, update, context)
+            elif query.data == "soft_restart":
+                self.soft_restart(update)
+            elif query.data == "soft_restart_to_manual":
+                self.soft_restart_mode("MANUAL", update)
+            elif query.data == "soft_restart_to_auto":
+                self.soft_restart_mode("AUTO", update)
+            elif query.data == "send_backup":
+                self.send_backup(update)
 
-        self.completed_tasks += 1
-        if self.completed_tasks == self.num_tasks:
-            self.terminate_program()
+            self.completed_tasks += 1
+            if self.completed_tasks == self.num_tasks:
+                self.terminate_program()
 
     def take_screenshot(self, agent, update, context):
         try:
