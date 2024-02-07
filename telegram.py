@@ -511,7 +511,7 @@ class Telegram(plugins.Plugin):
 
         # Obtain the file size
 
-        file_size = os.path.getsize("/home/pi/pwnagotchi-backup.tar.gz")
+        file_size = os.path.getsize(f"/home/pi/{backup_file_name}")
         keyboard = [
             [
                 InlineKeyboardButton(
