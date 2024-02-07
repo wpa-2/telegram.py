@@ -49,7 +49,6 @@ class Telegram(plugins.Plugin):
     __description__ = "Chats to telegram"
     __dependencies__ = ("python-telegram-bot==13.15",)
 
-
     def on_loaded(self):
         logging.info("[TELEGRAM] telegram plugin loaded.")
         self.logger = logging.getLogger("TelegramPlugin")
@@ -120,7 +119,7 @@ class Telegram(plugins.Plugin):
             elif query.data == "take_screenshot":
                 self.take_screenshot(agent, update, context)
             elif query.data == "create_backup":
-                self.create_backup(agent, update, context)
+                self.last_backup = self.create_backup(agent, update, context)
             elif query.data == "pwnkill":
                 self.pwnkill(agent, update, context)
             elif query.data == "start":
@@ -494,7 +493,8 @@ class Telegram(plugins.Plugin):
         current_time = datetime.now()
         formatted_time = current_time.strftime("%Y-%m-%d-%H:%M:%S")
 
-        backup_tar_path = f"/root/pwnagotchi-backup-{formatted_time}.tar.gz"
+        backup_file_name = f"pwnagotchi-backup-{formatted_time}.tar.gz"
+        backup_tar_path = f"/root/{backup_file_name}"
 
         try:
             # Create a tarball
@@ -515,7 +515,7 @@ class Telegram(plugins.Plugin):
         keyboard = [
             [
                 InlineKeyboardButton(
-                    "Send me the backup here", callback_data="send_backup"
+                    "📤 Send me the backup here", callback_data="send_backup"
                 ),
             ],
             [
@@ -535,16 +535,9 @@ class Telegram(plugins.Plugin):
 
     def send_backup(self, update):
         try:
-            # Get the last backup file that starts with pwnagotchi-backup and ends with .tar.gz
+            backup = self.last_backup
+            logging.info(f"[TELEGRAM] Sending backup: {backup}")
             update.effective_message.reply_text("Sending backup...")
-            backup = max(
-                [
-                    f
-                    for f in os.listdir("/home/pi/")
-                    if f.startswith("pwnagotchi-backup") and f.endswith(".tar.gz")
-                ],
-                key=os.path.getctime,
-            )
             update.effective_chat.send_document(f"/home/pi/{backup}")
         except Exception as e:
             logging.error(f"[TELEGRAM] Error sending backup: {e}")
