@@ -15,11 +15,12 @@ from telegram.ext import MessageHandler, Filters, CallbackQueryHandler, Updater
 main_menu = [
     [
         InlineKeyboardButton("🔄 Reboot", callback_data="reboot"),
-        InlineKeyboardButton("❌ Shutdown", callback_data="shutdown"),
+        InlineKeyboardButton("🛑 Shutdown", callback_data="shutdown"),
         InlineKeyboardButton("⏰ Uptime", callback_data="uptime"),
     ],
     [
-        InlineKeyboardButton("🤝 Handshake Count", callback_data="handshake_count"),
+        InlineKeyboardButton("🤝 Handshake Count",
+                             callback_data="handshake_count"),
         InlineKeyboardButton(
             "🔓 Read WPA-Sec Cracked", callback_data="read_wpa_sec_cracked"
         ),
@@ -28,12 +29,14 @@ main_menu = [
         ),
     ],
     [
-        InlineKeyboardButton("🧠 Read Memory & Temp", callback_data="read_memtemp"),
-        InlineKeyboardButton("🎨 Take Screenshot", callback_data="take_screenshot"),
+        InlineKeyboardButton("🧠 Read Memory & Temp",
+                             callback_data="read_memtemp"),
+        InlineKeyboardButton("🎨 Take Screenshot",
+                             callback_data="take_screenshot"),
         InlineKeyboardButton("💾 Create Backup", callback_data="create_backup"),
     ],
     [
-        InlineKeyboardButton("⚙️  Kill the daemon", callback_data="pwnkill"),
+        InlineKeyboardButton("🗡️  Kill the daemon", callback_data="pwnkill"),
         InlineKeyboardButton("🔁 Restart Daemon", callback_data="soft_restart"),
     ],
 ]
@@ -68,7 +71,8 @@ class Telegram(plugins.Plugin):
         )
         dispatcher.add_handler(
             CallbackQueryHandler(
-                lambda update, context: self.button_handler(agent, update, context)
+                lambda update, context: self.button_handler(
+                    agent, update, context)
             )
         )
 
@@ -78,7 +82,8 @@ class Telegram(plugins.Plugin):
         try:
             update.message.reply_text(response, reply_markup=reply_markup)
         except AttributeError:
-            update.effective_message.reply_text(response, reply_markup=reply_markup)
+            update.effective_message.reply_text(
+                response, reply_markup=reply_markup)
 
     def button_handler(self, agent, update, context):
         query = update.callback_query
@@ -116,6 +121,8 @@ class Telegram(plugins.Plugin):
             self.soft_restart_mode("MANUAL", update)
         elif query.data == "soft_restart_to_auto":
             self.soft_restart_mode("AUTO", update)
+        elif query.data == "send_backup":
+            self.send_backup(update)
 
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
@@ -140,7 +147,8 @@ class Telegram(plugins.Plugin):
             rotated_screenshot.save(picture_path, "png")
 
             with open(picture_path, "rb") as photo:
-                context.bot.send_photo(chat_id=update.effective_chat.id, photo=photo)
+                context.bot.send_photo(
+                    chat_id=update.effective_chat.id, photo=photo)
 
             response = "Screenshot taken and sent!"
         except Exception as e:
@@ -165,7 +173,8 @@ class Telegram(plugins.Plugin):
 
         response = "⚠️  This will restart the device, not the daemon.\nSSH or bluetooth will be interrupted\nPlease select an option:"
         reply_markup = InlineKeyboardMarkup(keyboard)
-        update.effective_message.reply_text(response, reply_markup=reply_markup)
+        update.effective_message.reply_text(
+            response, reply_markup=reply_markup)
 
     def reboot_mode(self, mode, update):
         if mode is not None:
@@ -242,7 +251,8 @@ class Telegram(plugins.Plugin):
 
         response = "⚠️  This will restart the daemon, not the device.\nSSH or bluetooth will not be interrupted\nPlease select an option:"
         reply_markup = InlineKeyboardMarkup(keyboard)
-        update.effective_message.reply_text(response, reply_markup=reply_markup)
+        update.effective_message.reply_text(
+            response, reply_markup=reply_markup)
 
     def soft_restart_mode(self, mode, update):
         logging.warning("[TELEGRAM] restarting in %s mode ...", mode)
@@ -302,7 +312,7 @@ class Telegram(plugins.Plugin):
             formatted_output = [f"{match[0]}:{match[1]}" for match in matches]
             chunk_size = 5
             chunks = [
-                formatted_output[i : i + chunk_size]
+                formatted_output[i: i + chunk_size]
                 for i in range(0, len(formatted_output), chunk_size)
             ]
             chunk_strings = ["\n".join(chunk) for chunk in chunks]
@@ -315,7 +325,8 @@ class Telegram(plugins.Plugin):
         file_path = "/root/handshakes/wpa-sec.cracked.potfile"
         chunks = self.read_handshake_pot_files(file_path)
         if not chunks or not any(chunk.strip() for chunk in chunks):
-            update.effective_message.reply_text("The wpa-sec.cracked.potfile is empty.")
+            update.effective_message.reply_text(
+                "The wpa-sec.cracked.potfile is empty.")
         else:
             for chunk in chunks:
                 update.effective_message.reply_text(chunk)
@@ -351,13 +362,16 @@ class Telegram(plugins.Plugin):
                 message = line.split("│")[1:4]
                 formatted_message = (
                     "ID: "
-                    + message[0].strip().replace("\x1b[2m", "").replace("\x1b[0m", "")
+                    + message[0].strip().replace("\x1b[2m",
+                                                 "").replace("\x1b[0m", "")
                     + "\n"
                     + "Date: "
-                    + message[1].strip().replace("\x1b[2m", "").replace("\x1b[0m", "")
+                    + message[1].strip().replace("\x1b[2m",
+                                                 "").replace("\x1b[0m", "")
                     + "\n"
                     + "Sender: "
-                    + message[2].strip().replace("\x1b[2m", "").replace("\x1b[0m", "")
+                    + message[2].strip().replace("\x1b[2m",
+                                                 "").replace("\x1b[0m", "")
                 )
                 formatted_output.append(formatted_message)
 
@@ -369,7 +383,8 @@ class Telegram(plugins.Plugin):
     def handle_pwngrid_inbox(self, agent, update, context):
         reply = self.fetch_inbox()
         if reply:
-            context.bot.send_message(chat_id=update.effective_chat.id, text=reply)
+            context.bot.send_message(
+                chat_id=update.effective_chat.id, text=reply)
         else:
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
@@ -435,7 +450,8 @@ class Telegram(plugins.Plugin):
 
                 if self.options["send_picture"] is True:
                     bot.sendPhoto(
-                        chat_id=self.options["chat_id"], photo=open(picture, "rb")
+                        chat_id=self.options["chat_id"], photo=open(
+                            picture, "rb")
                     )
                     self.logger.info("telegram: picture sent")
 
@@ -457,11 +473,19 @@ class Telegram(plugins.Plugin):
             "/var/log/pwnagotchi.log",
         ]
 
-        backup_tar_path = "/root/pwnagotchi-backup.tar.gz"
+        # Get datetime
+
+        from datetime import datetime
+
+        current_time = datetime.now()
+        formatted_time = current_time.strftime("%Y-%m-%d-%H:%M:%S")
+
+        backup_tar_path = f"/root/pwnagotchi-backup-{formatted_time}.tar.gz"
 
         try:
             # Create a tarball
-            subprocess.run(["sudo", "tar", "czf", backup_tar_path] + backup_files)
+            subprocess.run(
+                ["sudo", "tar", "czf", backup_tar_path] + backup_files)
 
             # Move the tarball to /home/pi/
             subprocess.run(["sudo", "mv", backup_tar_path, "/home/pi/"])
@@ -471,12 +495,47 @@ class Telegram(plugins.Plugin):
         except Exception as e:
             logging.error(f"[TELEGRAM] Error creating or moving backup: {e}")
 
-        response = "Backup created and moved successfully."
-        update.effective_message.reply_text(response)
+        # Obtain the file size
+
+        file_size = os.path.getsize("/home/pi/pwnagotchi-backup.tar.gz")
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    "Send me the backup here", callback_data="send_backup"
+                ),
+            ],
+            [
+                InlineKeyboardButton("Go back", callback_data="start"),
+            ],
+        ]
+
+        response = f"Backup created and moved successfully. File size: {file_size}"
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        update.effective_message.reply_text(
+            response, reply_markup=reply_markup)
 
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
             self.terminate_program()
+
+    def send_backup(self, update):
+        try:
+            # Get the last backup file that starts with pwnagotchi-backup and ends with .tar.gz
+            update.effective_message.reply_text("Sending backup...")
+            backup = max(
+                [
+                    f
+                    for f in os.listdir("/home/pi/")
+                    if f.startswith("pwnagotchi-backup") and f.endswith(".tar.gz")
+                ],
+                key=os.path.getctime,
+            )
+            update.effective_chat.send_document(backup)
+        except Exception as e:
+            logging.error(f"[TELEGRAM] Error sending backup: {e}")
+            response = f"Error sending backup: {e}"
+            update.effective_message.reply_text(response)
 
     def on_handshake(self, agent, filename, access_point, client_station):
         config = agent.config()
