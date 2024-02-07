@@ -49,6 +49,7 @@ class Telegram(plugins.Plugin):
     __description__ = "Chats to telegram"
     __dependencies__ = ("python-telegram-bot==13.15",)
 
+
     def on_loaded(self):
         logging.info("[TELEGRAM] telegram plugin loaded.")
         self.logger = logging.getLogger("TelegramPlugin")
@@ -79,7 +80,13 @@ class Telegram(plugins.Plugin):
     def start(self, agent, update, context):
         # Verify if hte user is authorized
         if update.effective_chat.id == self.options["chat_id"]:
-            response = "Welcome to Pwnagotchi!\n\nPlease select an option:"
+            try:
+                self.options["bot_name"]
+            except:
+                self.options["bot_name"] = "Pwnagotchi"
+
+            bot_name = self.options["bot_name"]
+            response = f"Welcome to {bot_name}\n\nPlease select an option:"
             reply_markup = InlineKeyboardMarkup(main_menu)
             try:
                 update.message.reply_text(response, reply_markup=reply_markup)
@@ -405,8 +412,6 @@ class Telegram(plugins.Plugin):
         try:
             logging.info("[TELEGRAM] Connecting to Telegram...")
             bot = telegram.Bot(self.options["bot_token"])
-            bot_name = self.options["bot_name"]
-
             if self.updater is None:
                 self.updater = Updater(
                     token=self.options["bot_token"], use_context=True
@@ -415,6 +420,12 @@ class Telegram(plugins.Plugin):
                 self.updater.start_polling()
 
             if not self.start_menu_sent:
+                try:
+                    self.options["bot_name"]
+                except:
+                    self.options["bot_name"] = "Pwnagotchi"
+
+                bot_name = self.options["bot_name"]
                 response = f"Welcome to {bot_name}!\n\nPlease select an option:"
                 reply_markup = InlineKeyboardMarkup(main_menu)
                 bot.send_message(
