@@ -545,7 +545,7 @@ class Telegram(plugins.Plugin):
                 ],
                 key=os.path.getctime,
             )
-            update.effective_chat.send_document(backup)
+            update.effective_chat.send_document(f"/home/pi/{backup}")
         except Exception as e:
             logging.error(f"[TELEGRAM] Error sending backup: {e}")
             response = f"Error sending backup: {e}"
