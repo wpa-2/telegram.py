@@ -538,7 +538,8 @@ class Telegram(plugins.Plugin):
             backup = self.last_backup
             logging.info(f"[TELEGRAM] Sending backup: {backup}")
             update.effective_message.reply_text("Sending backup...")
-            update.effective_chat.send_document(f"/home/pi/{backup}")
+            with open(f"/home/pi/{backup}", 'rb') as backup_file:
+                update.effective_chat.send_document(document=backup_file)
         except Exception as e:
             logging.error(f"[TELEGRAM] Error sending backup: {e}")
             response = f"Error sending backup: {e}"
