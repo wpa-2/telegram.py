@@ -129,8 +129,12 @@ class Telegram(plugins.Plugin):
             # Capture screenshot
             screenshot = display.image()
 
-            # Rotate the image (180 degrees) before saving
-            rotated_screenshot = screenshot.rotate(180)
+            # Capture the screen rotation value and rotate the image (x degrees) before saving
+            # If there is no rotation value, the default value is 0
+
+            rotation_degree = self.options.get("rotation", 0)
+
+            rotated_screenshot = screenshot.rotate(rotation_degree)
 
             # Save the rotated image
             rotated_screenshot.save(picture_path, "png")
