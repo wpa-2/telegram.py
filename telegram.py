@@ -84,7 +84,7 @@ class Telegram(plugins.Plugin):
                 self.options["bot_name"] = "Pwnagotchi"
 
             bot_name = self.options["bot_name"]
-            response = f"Welcome to {bot_name}\n\nPlease select an option:"
+            response = f"🖖 Welcome to {bot_name}\n\nPlease select an option:"
             reply_markup = InlineKeyboardMarkup(main_menu)
             try:
                 update.message.reply_text(response, reply_markup=reply_markup)
@@ -138,7 +138,7 @@ class Telegram(plugins.Plugin):
                 self.terminate_program()
 
     def bot_update(self, update):
-        response = "Updating bot..."
+        response = "🆙 Updating bot..."
         update.effective_message.reply_text(response)
         # Obviously all inside the try block
         try:
@@ -153,11 +153,11 @@ class Telegram(plugins.Plugin):
             # At last we go into de /home/pi/telegram-bot directory and make a git pull
             subprocess.run(["git", "pull"], cwd="telegram-bot")
         except Exception as e:
-            response = f"Error updating bot: {e}"
+            response = f"⛔ Error updating bot: {e}"
             update.effective_message.reply_text(response)
             return
         # Send a message to the user that the bot has been updated
-        response = "Bot updated successfully!"
+        response = "🆗 Bot updated successfully!"
         update.effective_message.reply_text(response)
 
     def take_screenshot(self, agent, update, context):
@@ -181,9 +181,9 @@ class Telegram(plugins.Plugin):
             with open(picture_path, "rb") as photo:
                 context.bot.send_photo(chat_id=update.effective_chat.id, photo=photo)
 
-            response = "Screenshot taken and sent!"
+            response = "🆗 Screenshot taken and sent!"
         except Exception as e:
-            response = f"Error taking screenshot: {e}"
+            response = f"⛔ Error taking screenshot: {e}"
 
         update.effective_message.reply_text(response)
 
@@ -191,14 +191,14 @@ class Telegram(plugins.Plugin):
         keyboard = [
             [
                 InlineKeyboardButton(
-                    "Reboot to manual mode", callback_data="reboot_to_manual"
+                    "🤖 Reboot to manual mode", callback_data="reboot_to_manual"
                 ),
                 InlineKeyboardButton(
-                    "Reboot to auto mode", callback_data="reboot_to_auto"
+                    "🛜 Reboot to auto mode", callback_data="reboot_to_auto"
                 ),
             ],
             [
-                InlineKeyboardButton("Go back", callback_data="start"),
+                InlineKeyboardButton("🔙 Go back", callback_data="start"),
             ],
         ]
 
@@ -209,9 +209,9 @@ class Telegram(plugins.Plugin):
     def reboot_mode(self, mode, update):
         if mode is not None:
             mode = mode.upper()
-            reboot_text = f"rebooting in {mode} mode"
+            reboot_text = f"🔄 rebooting in {mode} mode"
         else:
-            reboot_text = "rebooting..."
+            reboot_text = "🔄 rebooting..."
 
         try:
             response = reboot_text
@@ -238,11 +238,11 @@ class Telegram(plugins.Plugin):
             subprocess.run(["sudo", "reboot"])
         except Exception as e:
             logging.error(f"[TELEGRAM] Error rebooting: {e}")
-            response = f"Error rebooting: {e}"
+            response = f"⛔ Error rebooting: {e}"
             update.effective_message.reply_text(response)
 
     def shutdown(self, update):
-        response = "Shutting down now..."
+        response = "📴 Shutting down now..."
         update.effective_message.reply_text(response)
         logging.warning("[TELEGRAM] shutting down ...")
 
@@ -261,21 +261,21 @@ class Telegram(plugins.Plugin):
             subprocess.run(["sudo", "halt"])
         except Exception as e:
             logging.error(f"[TELEGRAM] Error shutting down: {e}")
-            response = f"Error shutting down: {e}"
+            response = f"⛔ Error shutting down: {e}"
             update.effective_message.reply_text(response)
 
     def soft_restart(self, update):
         keyboard = [
             [
                 InlineKeyboardButton(
-                    "Restart to manual mode", callback_data="soft_restart_to_manual"
+                    "🤖 Restart to manual mode", callback_data="soft_restart_to_manual"
                 ),
                 InlineKeyboardButton(
-                    "Restart to auto mode", callback_data="soft_restart_to_auto"
+                    "🛜 Restart to auto mode", callback_data="soft_restart_to_auto"
                 ),
             ],
             [
-                InlineKeyboardButton("Go back", callback_data="start"),
+                InlineKeyboardButton("🔙 Go back", callback_data="start"),
             ],
         ]
 
@@ -285,7 +285,7 @@ class Telegram(plugins.Plugin):
 
     def soft_restart_mode(self, mode, update):
         logging.warning("[TELEGRAM] restarting in %s mode ...", mode)
-        response = f"Restarting in {mode} mode..."
+        response = f"🔃 Restarting in {mode} mode..."
         update.effective_message.reply_text(response)
 
         if view.ROOT:
@@ -301,7 +301,7 @@ class Telegram(plugins.Plugin):
             subprocess.run(["sudo", "systemctl", "restart", "pwnagotchi"])
         except Exception as e:
             logging.error(f"[TELEGRAM] Error restarting: {e}")
-            response = f"Error restarting: {e}"
+            response = f"⛔ Error restarting: {e}"
             update.effective_message.reply_text(response)
 
     def uptime(self, agent, update, context):
@@ -313,7 +313,7 @@ class Telegram(plugins.Plugin):
         uptime_remaining_minutes = int(uptime_minutes % 60)
 
         response = (
-            f"Uptime: {uptime_hours} hours and {uptime_remaining_minutes} minutes"
+            f"⏰ Uptime: {uptime_hours} hours and {uptime_remaining_minutes} minutes"
         )
         update.effective_message.reply_text(response)
 
@@ -323,12 +323,12 @@ class Telegram(plugins.Plugin):
 
     def pwnkill(self, agent, update, context):
         try:
-            response = "Sending pwnkill to pwnagotchi..."
+            response = "⏰ Sending pwnkill to pwnagotchi..."
             update.effective_message.reply_text(response)
 
             subprocess.run(["sudo", "killall", "-USR1", "pwnagotchi"])
         except subprocess.CalledProcessError as e:
-            response = f"Error executing pwnkill command: {e}"
+            response = f"⛔ Error executing pwnkill command: {e}"
             update.effective_message.reply_text(response)
 
     def format_handshake_pot_files(self, file_path):
@@ -348,7 +348,7 @@ class Telegram(plugins.Plugin):
             return messages_list
 
         except subprocess.CalledProcessError as e:
-            return [f"Error reading file: {e}"]
+            return [f"⛔ Error reading file: {e}"]
 
     def read_wpa_sec_cracked(self, agent, update, context):
         file_path = "/root/handshakes/wpa-sec.cracked.potfile"
@@ -361,7 +361,7 @@ class Telegram(plugins.Plugin):
             message_counter = 0
             for chunk in chunks:
                 if message_counter >= 20:
-                    response = "Sleeping for 60 seconds to avoid flooding the chat..."
+                    response = "💤 Sleeping for 60 seconds to avoid flooding the chat..."
                     update.effective_message.reply_text(response)
                     time.sleep(60)
                     message_counter = 0
@@ -382,7 +382,7 @@ class Telegram(plugins.Plugin):
             ]
         )
 
-        response = f"Total handshakes captured: {count}"
+        response = f"🤝 Total handshakes captured: {count}"
         update.effective_message.reply_text(response)
 
         self.completed_tasks += 1
@@ -449,7 +449,7 @@ class Telegram(plugins.Plugin):
                     self.options["bot_name"] = "Pwnagotchi"
 
                 bot_name = self.options["bot_name"]
-                response = f"Welcome to {bot_name}!\n\nPlease select an option:"
+                response = f"🤝 Welcome to {bot_name}!\n\nPlease select an option:"
                 reply_markup = InlineKeyboardMarkup(main_menu)
                 bot.send_message(
                     chat_id=self.options["chat_id"],
@@ -541,11 +541,11 @@ class Telegram(plugins.Plugin):
                 ),
             ],
             [
-                InlineKeyboardButton("Go back", callback_data="start"),
+                InlineKeyboardButton("🔙 Go back", callback_data="start"),
             ],
         ]
 
-        response = f"Backup created and moved successfully. File size: {file_size}"
+        response = f"🆗 Backup created and moved successfully. File size: {file_size}"
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         update.effective_message.reply_text(response, reply_markup=reply_markup)
@@ -564,7 +564,7 @@ class Telegram(plugins.Plugin):
                 update.effective_chat.send_document(document=backup_file)
         except Exception as e:
             logging.error(f"[TELEGRAM] Error sending backup: {e}")
-            response = f"Error sending backup: {e}"
+            response = f"⛔ Error sending backup: {e}"
             update.effective_message.reply_text(response)
 
     def on_handshake(self, agent, filename, access_point, client_station):
