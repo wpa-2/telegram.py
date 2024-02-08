@@ -138,6 +138,7 @@ class Telegram(plugins.Plugin):
                 self.terminate_program()
 
     def bot_update(self, update):
+        logging.info("[TELEGRAM] Updating bot...")
         response = "🆙 Updating bot..."
         update.effective_message.reply_text(response)
         # Obviously all inside the try block
@@ -146,13 +147,18 @@ class Telegram(plugins.Plugin):
             os.chdir(home_dir)
             if not os.path.exists("telegram-bot"):
                 # If not, we make a git clone https://github.com/wpa-2/telegram.py telegram-bot
+                logging.debug("[TELEGRAM] Cloning telegram-bot repository...")
                 subprocess.run(["git", "clone", "https://github.com/wpa-2/telegram.py", "telegram-bot"])
-
+                logging.debug("[TELEGRAM] telegram-bot repository cloned successfully. Adding repo as safe ")
+                subprocess.run(["git", "config", "--global", "--add safe.directory", "/home/pi/telegram-bot"])
                 # Then we make a symlink between the {home_dir}/telegram-bot/telegram.py and {plugins_dir}/telegram.py
+                logging.debug("[TELEGRAM] Creating symlink...")
                 subprocess.run(["ln", "-s", "-f", f"{home_dir}/telegram-bot/telegram.py", f"{plugins_dir}/telegram.py"])
             # At last we go into de /home/pi/telegram-bot directory and make a git pull
+            logging.info("[TELEGRAM] Pulling latest changes from telegram-bot repository...")
             subprocess.run(["git", "pull"], cwd="telegram-bot")
         except Exception as e:
+            logging.error(f"[TELEGRAM] Error updating bot: {e}")
             response = f"⛔ Error updating bot: {e}"
             update.effective_message.reply_text(response)
             return
