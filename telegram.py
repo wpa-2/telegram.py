@@ -337,8 +337,16 @@ class Telegram(plugins.Plugin):
             update.effective_message.reply_text(
                 "The wpa-sec.cracked.potfile is empty.")
         else:
+            import time
+            message_counter = 0
             for chunk in chunks:
+                if message_counter >= 20:
+                    response = "Sleeping for 60 seconds to avoid flooding the chat..."
+                    update.effective_message.reply_text(response)
+                    time.sleep(60)
+                    message_counter = 0
                 update.effective_message.reply_text(chunk)
+                message_counter += 1
 
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
