@@ -74,7 +74,7 @@ class Telegram(plugins.Plugin):
 
     def start(self, agent, update, context):
         # Verify if hte user is authorized
-        if update.effective_chat.id == self.options["chat_id"]:
+        if update.effective_chat.id == int(self.options["chat_id"]):
             try:
                 self.options["bot_name"]
             except:
@@ -89,7 +89,7 @@ class Telegram(plugins.Plugin):
                 update.effective_message.reply_text(response, reply_markup=reply_markup)
 
     def button_handler(self, agent, update, context):
-        if update.effective_chat.id == self.options["chat_id"]:
+        if update.effective_chat.id == int(self.options["chat_id"]):
             query = update.callback_query
             query.answer()
 
