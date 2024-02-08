@@ -367,7 +367,7 @@ class Telegram(plugins.Plugin):
     def read_wpa_sec_cracked(self, agent, update, context):
         file_path = "/root/handshakes/wpa-sec.cracked.potfile"
         chunks = self.format_handshake_pot_files(file_path)
-        if not chunks:
+        if not chunks or not any(chunk.strip() for chunk in chunks):
             update.effective_message.reply_text("The wpa-sec.cracked.potfile is empty.")
         else:
             import time
