@@ -73,7 +73,7 @@ class Telegram(plugins.Plugin):
         )
 
     def start(self, agent, update, context):
-        # Verify if hte user is authorized
+        # Verify if the user is authorized
         if update.effective_chat.id == int(self.options["chat_id"]):
             try:
                 self.options["bot_name"]
