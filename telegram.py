@@ -1,4 +1,5 @@
 import os
+import pwd
 import logging
 import telegram
 import subprocess
@@ -137,6 +138,12 @@ class Telegram(plugins.Plugin):
             if self.completed_tasks == self.num_tasks:
                 self.terminate_program()
 
+    def run_as_user(self, cmd, user):
+        uid = pwd.getpwnam(user).pw_uid
+        os.setuid(uid)
+        os.system(cmd)
+        os.setuid(0)
+
     def bot_update(self, update):
         logging.info("[TELEGRAM] Updating bot...")
         response = "🆙 Updating bot..."
@@ -148,15 +155,16 @@ class Telegram(plugins.Plugin):
             if not os.path.exists("telegram-bot"):
                 # If not, we make a git clone https://github.com/wpa-2/telegram.py telegram-bot
                 logging.debug("[TELEGRAM] Cloning telegram-bot repository...")
-                subprocess.run(["git", "clone", "https://github.com/wpa-2/telegram.py", "telegram-bot"])
+                self.run_as_user("git clone clone https://github.com/wpa-2/telegram.py telegram-bot", "pi")
                 logging.debug("[TELEGRAM] telegram-bot repository cloned successfully. Adding repo as safe ")
-                subprocess.run(["git", "config", "--global", "--add safe.directory", "/home/pi/telegram-bot"])
+                self.run_as_user("git config --global --add safe.directory /home/pi/telegram-bot", "pi")
                 # Then we make a symlink between the {home_dir}/telegram-bot/telegram.py and {plugins_dir}/telegram.py
                 logging.debug("[TELEGRAM] Creating symlink...")
                 subprocess.run(["ln", "-s", "-f", f"{home_dir}/telegram-bot/telegram.py", f"{plugins_dir}/telegram.py"])
             # At last we go into de /home/pi/telegram-bot directory and make a git pull
             logging.info("[TELEGRAM] Pulling latest changes from telegram-bot repository...")
-            subprocess.run(["git", "pull"], cwd="telegram-bot")
+            self.run_as_user("cd telegram-bot && git pull", "pi")
+            # subprocess.run(["git", "pull"], cwd="telegram-bot")
         except Exception as e:
             logging.error(f"[TELEGRAM] Error updating bot: {e}")
             response = f"⛔ Error updating bot: {e}"
