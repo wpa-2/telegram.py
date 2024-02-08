@@ -316,6 +316,7 @@ class Telegram(plugins.Plugin):
                         messages_list.append(message)
                         message = ""
                     message += ":".join(pwned)
+                messages_list.append(message)
             return messages_list
 
         except subprocess.CalledProcessError as e:
@@ -324,7 +325,7 @@ class Telegram(plugins.Plugin):
     def read_wpa_sec_cracked(self, agent, update, context):
         file_path = "/root/handshakes/wpa-sec.cracked.potfile"
         chunks = self.format_handshake_pot_files(file_path)
-        if not chunks or not any(chunk.strip() for chunk in chunks):
+        if not chunks:
             update.effective_message.reply_text("The wpa-sec.cracked.potfile is empty.")
         else:
             import time
@@ -524,6 +525,7 @@ class Telegram(plugins.Plugin):
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
             self.terminate_program()
+        return backup_file_name
 
     def send_backup(self, update):
         try:
