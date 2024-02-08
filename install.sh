@@ -17,16 +17,16 @@ function is_bookworm() {
 }
 
 function remove_dependencies() {
-	sudo pip3 uninstall telegram python-telegram-bot
+	pip3 uninstall telegram python-telegram-bot
 }
 
 function install_dependencies() {
-	sudo pip3 uninstall telegram python-telegram-bot
+	pip3 uninstall telegram python-telegram-bot
 
 	if is_bookworm; then
-		sudo pip3 install python-telegram-bot==13.15 --break-system-packages
+		pip3 install python-telegram-bot==13.15 --break-system-packages
 	else
-		sudo pip3 install python-telegram-bot==13.15
+		pip3 install python-telegram-bot==13.15
 	fi
 }
 
@@ -38,7 +38,7 @@ function check_toml_key_exists() {
 		echo "The '$key' already exists on $config_file."
 	else
 		echo "Creating '$key' on $config_file."
-		echo "${key} = \"test\" " >>"$config_file"
+		echo "${key} = true " >>"$config_file"
 	fi
 }
 
@@ -79,18 +79,23 @@ function modify_config_files() {
 
 # Main
 
-echo "[ ~ ] We may need sudo permissions..."
-sleep 0.5
+# Check that the script is running as root
+
+if [ "$EUID" -ne 0 ]; then
+	echo "[ ! ] This script need to be run as root"
+	exit 0
+fi
 echo "[ - ] Removing old dependencies..."
-remove_dependencies
+# remove_dependencies
 echo "[ + ] Installing new dependencies..."
-install_dependencies
+# install_dependencies
 echo "[ + ] Creating symbolic link to ${INSTALLATION_DIRECTORY}"
-sudo ln -sf "$(pwd)/telegram.py" "${INSTALLATION_DIRECTORY}/telegram-py"
+# ln -sf "$(pwd)/telegram.py" "${INSTALLATION_DIRECTORY}/telegram-py"
 echo "[ + ] Backing up configuration files..."
-sudo cp "${CONFIG_FILE}" "${CONFIG_FILE}.bak"
+# cp "${CONFIG_FILE}" "${CONFIG_FILE}.bak"
 echo "[ ~ ] Modifying configuration files..."
 modify_config_files
 echo "[ * ] Done! Please restart your pwnagotchi daemon to apply changes"
-echo "[ * ] You can do so with"
+echo "[ * ] You can do so with:"
 echo "[ > ] sudo systemctl restart pwnagotchi"
+
