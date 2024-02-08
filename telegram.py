@@ -311,11 +311,11 @@ class Telegram(plugins.Plugin):
             with open(file_path, "r") as file:
                 content = file.readlines()
                 for line in content:
-                    pwned = line.split(":")[2:4]
+                    pwned = line.split(":")[2:]
                     if len(message + line) > 4096:
                         messages_list.append(message)
                         message = ""
-                    message += ":".join(pwned) + "\n"
+                    message += ":".join(pwned)
             return messages_list
 
         except subprocess.CalledProcessError as e:
