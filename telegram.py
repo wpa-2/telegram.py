@@ -1,4 +1,3 @@
-import re
 import os
 import logging
 import telegram
@@ -11,6 +10,9 @@ from pwnagotchi.voice import Voice
 import pwnagotchi.plugins as plugins
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import MessageHandler, Filters, CallbackQueryHandler, Updater
+
+home_dir = "/home/pi"
+plugins_dir = "/usr/local/share/pwnagotchi/custom-plugins"
 
 main_menu = [
     [
@@ -33,6 +35,7 @@ main_menu = [
         InlineKeyboardButton("💾 Create Backup", callback_data="create_backup"),
     ],
     [
+        InlineKeyboardButton("🔄 Update bot", callback_data="bot_update"),
         InlineKeyboardButton("🗡️  Kill the daemon", callback_data="pwnkill"),
         InlineKeyboardButton("🔁 Restart Daemon", callback_data="soft_restart"),
     ],
@@ -127,10 +130,35 @@ class Telegram(plugins.Plugin):
                 self.soft_restart_mode("AUTO", update)
             elif query.data == "send_backup":
                 self.send_backup(update)
+            elif query.data == "bot_update":
+                self.bot_update(update)
 
             self.completed_tasks += 1
             if self.completed_tasks == self.num_tasks:
                 self.terminate_program()
+
+    def bot_update(self, update):
+        response = "Updating bot..."
+        update.effective_message.reply_text(response)
+        # Obviously all inside the try block
+        try:
+            # We need to go to the /home/pi directory, check if there is a folder named telegram-bot
+            os.chdir(home_dir)
+            if not os.path.exists("telegram-bot"):
+                # If not, we make a git clone https://github.com/wpa-2/telegram.py telegram-bot
+                subprocess.run(["git", "clone", "https://github.com/wpa-2/telegram.py", "telegram-bot"])
+
+                # Then we make a symlink between the {home_dir}/telegram-bot/telegram.py and {plugins_dir}/telegram.py
+                subprocess.run(["ln", "-s", "-f", f"{home_dir}/telegram-bot/telegram.py", f"{plugins_dir}/telegram.py"])
+            # At last we go into de /home/pi/telegram-bot directory and make a git pull
+            subprocess.run(["git", "pull"], cwd="telegram-bot")
+        except Exception as e:
+            response = f"Error updating bot: {e}"
+            update.effective_message.reply_text(response)
+            return
+        # Send a message to the user that the bot has been updated
+        response = "Bot updated successfully!"
+        update.effective_message.reply_text(response)
 
     def take_screenshot(self, agent, update, context):
         try:
