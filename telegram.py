@@ -3,6 +3,7 @@ import pwd
 import logging
 import telegram
 import subprocess
+import shutil
 import pwnagotchi
 from time import sleep
 from pwnagotchi import fs
@@ -45,7 +46,7 @@ main_menu = [
 
 class Telegram(plugins.Plugin):
     __author__ = "WPA2"
-    __version__ = "0.1.4"
+    __version__ = "0.2.0"
     __license__ = "GPL3"
     __description__ = "Chats to telegram"
     __dependencies__ = ("python-telegram-bot==13.15",)
@@ -141,38 +142,57 @@ class Telegram(plugins.Plugin):
     def run_as_user(self, cmd, user):
         uid = pwd.getpwnam(user).pw_uid
         os.setuid(uid)
-        os.system(cmd)
+        sudo_cmd = f"sudo {cmd}"
+        os.system(sudo_cmd)
         os.setuid(0)
 
     def bot_update(self, update):
         logging.info("[TELEGRAM] Updating bot...")
         response = "🆙 Updating bot..."
         update.effective_message.reply_text(response)
-        # Obviously all inside the try block
         try:
-            # We need to go to the /home/pi directory, check if there is a folder named telegram-bot
+            # Change directory to /home/pi
             os.chdir(home_dir)
+            
+            # Check if the telegram-bot folder exists
             if not os.path.exists("telegram-bot"):
-                # If not, we make a git clone https://github.com/wpa-2/telegram.py telegram-bot
+                # Clone the telegram-bot repository if it doesn't exist
                 logging.debug("[TELEGRAM] Cloning telegram-bot repository...")
-                self.run_as_user("git clone clone https://github.com/wpa-2/telegram.py telegram-bot", "pi")
-                logging.debug("[TELEGRAM] telegram-bot repository cloned successfully. Adding repo as safe ")
-                self.run_as_user("git config --global --add safe.directory /home/pi/telegram-bot", "pi")
-                # Then we make a symlink between the {home_dir}/telegram-bot/telegram.py and {plugins_dir}/telegram.py
-                logging.debug("[TELEGRAM] Creating symlink...")
-                subprocess.run(["ln", "-s", "-f", f"{home_dir}/telegram-bot/telegram.py", f"{plugins_dir}/telegram.py"])
-            # At last we go into de /home/pi/telegram-bot directory and make a git pull
+                subprocess.run(["git", "clone", "https://github.com/wpa-2/telegram.py", "telegram-bot"], check=True)
+                
+                # Add the repository as a safe directory
+                logging.debug("[TELEGRAM] Adding telegram-bot repository as safe...")
+                subprocess.run(["git", "config", "--global", "--add", "safe.directory", "/home/pi/telegram-bot"], check=True)
+                
+                # Change directory to telegram-bot
+                os.chdir("telegram-bot")
+            
+            else:
+                # Change directory to telegram-bot if it already exists
+                os.chdir("telegram-bot")
+            
+            # Pull the latest changes from the repository
             logging.info("[TELEGRAM] Pulling latest changes from telegram-bot repository...")
-            self.run_as_user("cd telegram-bot && git pull", "pi")
-            # subprocess.run(["git", "pull"], cwd="telegram-bot")
-        except Exception as e:
+            subprocess.run(["git", "pull"], check=True)
+            
+            # Move the telegram.py file to the plugins_dir, removing existing file if it exists
+            destination_file = os.path.join(plugins_dir, "telegram.py")
+            if os.path.exists(destination_file):
+                os.remove(destination_file)
+            logging.debug("[TELEGRAM] Moving telegram.py to plugins directory...")
+            shutil.move("telegram.py", destination_file)
+            
+        except subprocess.CalledProcessError as e:
+            # Handle errors
             logging.error(f"[TELEGRAM] Error updating bot: {e}")
             response = f"⛔ Error updating bot: {e}"
             update.effective_message.reply_text(response)
             return
-        # Send a message to the user that the bot has been updated
+        
+        # Send a message indicating success
         response = "🆗 Bot updated successfully!"
         update.effective_message.reply_text(response)
+
 
     def take_screenshot(self, agent, update, context):
         try:
