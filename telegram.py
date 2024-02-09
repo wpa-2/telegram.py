@@ -572,10 +572,15 @@ class Telegram(plugins.Plugin):
     def send_backup(self, update):
         try:
             backup = self.last_backup
-            logging.info(f"[TELEGRAM] Sending backup: {backup}")
-            update.effective_message.reply_text("Sending backup...")
-            with open(f"/home/pi/{backup}", "rb") as backup_file:
-                update.effective_chat.send_document(document=backup_file)
+            if backup:
+                logging.info(f"[TELEGRAM] Sending backup: {backup}")
+                backup_path = f"/home/pi/{backup}"
+                with open(backup_path, "rb") as backup_file:
+                    update.effective_chat.send_document(document=backup_file)
+                update.effective_message.reply_text("Backup sent successfully.")
+            else:
+                logging.error("[TELEGRAM] No backup file found.")
+                update.effective_message.reply_text("No backup file found.")
         except Exception as e:
             logging.error(f"[TELEGRAM] Error sending backup: {e}")
             response = f"⛔ Error sending backup: {e}"
