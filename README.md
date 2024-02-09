@@ -1,7 +1,8 @@
 # telegram.py Interactive pwnagotchi plugin
 
 
-![Screenshot 2024-02-09 224440](https://github.com/wpa-2/telegram.py/assets/9049886/25dd9c6b-6fc8-4010-bcc4-b419cf12cfe4)
+![Screenshot 2024-02-09 230346](https://github.com/wpa-2/telegram.py/assets/9049886/7733bb84-64b5-493e-b0ba-b8a386f2d348)
+
 
 
 
@@ -56,3 +57,5 @@ Current known issues
 None
 
 Please report any issues and get in touch over in the pwnagotchi discord.
+
+Special thank you to https://github.com/nothingbutlucas for all his hard work impriving the bot. 
