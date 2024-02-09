@@ -41,7 +41,7 @@ main_menu = [
 
 class Telegram(plugins.Plugin):
     __author__ = "WPA2"
-    __version__ = "0.1.1"
+    __version__ = "0.1.4"
     __license__ = "GPL3"
     __description__ = "Chats to telegram"
     __dependencies__ = ("python-telegram-bot==13.15",)
