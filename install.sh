@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+INSTALLATION_DIRECTORY="/usr/local/share/pwnagotchi/custom-plugins"
 CONFIG_FILE="/etc/pwnagotchi/config.toml"
 
 function user_sleep() {
@@ -50,12 +51,7 @@ function edit_configuration_values() {
 	value=$(echo "$value" | sed 's/\//\\\//g')
 	value=$(echo "$value" | sed 's/\./\\\./g')
 	# Use sed to insert or replace the configuration value
-	if [ "$value" = "true" ]; then
-		sed -i "s/^${key} = .*/${key} = ${value}/" "$config_file"
-	else
-		# Use sed to insert or replace the configuration value
-		sed -i "/^${key}/c ${key} = \"${value}\"" "$config_file"
-	fi
+	sed -i "/^${key}/c ${key} = \"${value}\"" "$config_file"
 }
 
 function modify_config_files() {
@@ -81,20 +77,6 @@ function modify_config_files() {
 	edit_configuration_values "main.plugins.telegram.send_message" "true" "$CONFIG_FILE"
 }
 
-function get_installation_path() {
-	check_toml_key_exists "main.custom_plugins" "$CONFIG_FILE"
-	installation_dir=$(awk '/^main.custom_plugins = / {print $3}' "$CONFIG_FILE")
-	if [ -z "${installation_dir//\"/}" ] || [ "$installation_dir" = true ]; then
-		echo "[ ! ] The installation directory was not found in the configuration file"
-		read -r -p "Please enter the installation directory, press Enter to set '/usr/local/share/pwnagotchi/custom-plugins' or specify yours with absolute path: " installation_dir
-	fi
-	if [ -z "${installation_dir//\"/}" ]; then
-		installation_dir="/usr/local/share/pwnagotchi/custom-plugins"
-	fi
-	edit_configuration_values "main.custom_plugins" "${installation_dir}" "$CONFIG_FILE"
-	installation_dir="${installation_dir//\"/}"
-}
-
 # Main
 
 # Check that the script is running as root
@@ -103,26 +85,17 @@ if [ "$EUID" -ne 0 ]; then
 	echo "[ ! ] This script need to be run as root"
 	exit 0
 fi
-user_sleep
-echo "[ + ] Getting installation path..."
-get_installation_path
-user_sleep
 echo "[ - ] Removing old dependencies..."
-remove_dependencies
+# remove_dependencies
 echo "[ + ] Installing new dependencies..."
-install_dependencies
-echo "[ + ] Creating symbolic link to ${installation_dir}"
-ln -sf "$(pwd)/telegram.py" "${installation_dir}/telegram-py"
-user_sleep
+# install_dependencies
+echo "[ + ] Creating symbolic link to ${INSTALLATION_DIRECTORY}"
+# ln -sf "$(pwd)/telegram.py" "${INSTALLATION_DIRECTORY}/telegram-py"
 echo "[ + ] Backing up configuration files..."
-cp "${CONFIG_FILE}" "${CONFIG_FILE}.bak"
-user_sleep
+# cp "${CONFIG_FILE}" "${CONFIG_FILE}.bak"
 echo "[ ~ ] Modifying configuration files..."
 modify_config_files
-user_sleep
 echo "[ * ] Done! Please restart your pwnagotchi daemon to apply changes"
-user_sleep
 echo "[ * ] You can do so with:"
-user_sleep
 echo "[ > ] sudo systemctl restart pwnagotchi"
 
