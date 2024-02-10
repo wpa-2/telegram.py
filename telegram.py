@@ -4,6 +4,7 @@ import logging
 import telegram
 import subprocess
 import pwnagotchi
+import random
 from time import sleep
 from pwnagotchi import fs
 from pwnagotchi.ui import view
@@ -41,6 +42,22 @@ main_menu = [
         InlineKeyboardButton("🗡️  Kill the daemon", callback_data="pwnkill"),
         InlineKeyboardButton("🔁 Restart Daemon", callback_data="soft_restart"),
     ],
+]
+
+stickers_exception = [
+    "CAACAgIAAxkBAAIKJGXHDISOASdXpKbXske2Q1IaVEMpAAIwAAMPdWsI7k_UrvN3piI0BA",
+    "CAACAgIAAxkBAAIKJmXHDIji0_pKBLqYHJMHQkw3QzZ9AAIyAAMPdWsIBdtzkkhTXqY0BA",
+    "CAACAgQAAxkBAAIKLmXHDM-ynEU2Int0s1YcpC3bqKK2AAIUAAPTrAoCbIyNeEmfdRo0BA",
+    "CAACAgIAAxkBAAIKMmXHDOTYF93WIanWQLgh9FgR8SnpAALtDAACT6QpSMtoWq3QTPsONAQ",
+]
+
+stickers_kill_daemon = [
+    "CAACAgQAAxkBAAIKKGXHDMFCsebQHdKaxBMwDJDpTrc7AAI5AAPTrAoCTTZZF0MD5og0BA",
+]
+
+stickers_handshake_or_wpa = [
+    "CAACAgIAAxkBAAIKMGXHDNlSDzyw6spWefM0J7O9br61AAL6EAACoccoSDllduuTWAejNAQ",
+    "CAACAgQAAxkBAAIKLGXHDMbkJgl6jf2fmkoz5WoSVO8KAAIcAAPTrAoC1E8xZAtCX8A0BA",
 ]
 
 
@@ -104,11 +121,11 @@ class Telegram(plugins.Plugin):
             if query.data == "reboot":
                 self.reboot(agent, update, context)
             elif query.data == "reboot_to_manual":
-                self.reboot_mode("MANUAL", update)
+                self.reboot_mode("MANUAL", update, context)
             elif query.data == "reboot_to_auto":
-                self.reboot_mode("AUTO", update)
+                self.reboot_mode("AUTO", update, context)
             elif query.data == "shutdown":
-                self.shutdown(update)
+                self.shutdown(update, context)
             elif query.data == "uptime":
                 self.uptime(agent, update, context)
             elif query.data == "read_wpa_sec_cracked":
@@ -130,9 +147,9 @@ class Telegram(plugins.Plugin):
             elif query.data == "soft_restart":
                 self.soft_restart(update)
             elif query.data == "soft_restart_to_manual":
-                self.soft_restart_mode("MANUAL", update)
+                self.soft_restart_mode("MANUAL", update, context)
             elif query.data == "soft_restart_to_auto":
-                self.soft_restart_mode("AUTO", update)
+                self.soft_restart_mode("AUTO", update, context)
             elif query.data == "send_backup":
                 self.send_backup(update, context)
             elif query.data == "bot_update":
@@ -142,13 +159,17 @@ class Telegram(plugins.Plugin):
             if self.completed_tasks == self.num_tasks:
                 self.terminate_program()
 
+    def send_sticker(self, update, context, fileid):
+        user_id = update.effective_message.chat_id
+        context.bot.send_sticker(chat_id=user_id, sticker=fileid)
+
     def update_existing_message(self, update, text, keyboard=[]):
         try:
             old_message = update.callback_query
             old_message.answer()
             go_back_button = [
-                    InlineKeyboardButton("🔙 Go back", callback_data="start"),
-                ]
+                InlineKeyboardButton("🔙 Go back", callback_data="start"),
+            ]
             if keyboard != main_menu and go_back_button not in keyboard:
                 # Add back button if the keyboard is not the main menu and the keyboard does not have the back button
                 keyboard.append(go_back_button)
@@ -271,6 +292,7 @@ class Telegram(plugins.Plugin):
 
             response = "✅ Screenshot taken and sent!"
         except Exception as e:
+            self.send_sticker(update, context, random.choice(stickers_exception))
             response = f"⛔ Error taking screenshot: {e}"
 
         update.effective_message.reply_text(response)
@@ -291,7 +313,7 @@ class Telegram(plugins.Plugin):
         self.update_existing_message(update, text, keyboard)
         return
 
-    def reboot_mode(self, mode, update):
+    def reboot_mode(self, mode, update, context):
         if mode is not None:
             mode = mode.upper()
             reboot_text = f"🔄 rebooting in {mode} mode"
@@ -322,11 +344,12 @@ class Telegram(plugins.Plugin):
             subprocess.run(["sudo", "sync"])
             subprocess.run(["sudo", "reboot"])
         except Exception as e:
+            self.send_sticker(update, context, random.choice(stickers_exception))
             logging.error(f"[TELEGRAM] Error rebooting: {e}")
             response = f"⛔ Error rebooting: {e}"
             update.effective_message.reply_text(response)
 
-    def shutdown(self, update):
+    def shutdown(self, update, context):
         response = "📴 Shutting down now..."
         self.update_existing_message(update, response)
         logging.warning("[TELEGRAM] shutting down ...")
@@ -345,6 +368,7 @@ class Telegram(plugins.Plugin):
             subprocess.run(["sudo", "sync"])
             subprocess.run(["sudo", "halt"])
         except Exception as e:
+            self.send_sticker(update, context, random.choice(stickers_exception))
             logging.error(f"[TELEGRAM] Error shutting down: {e}")
             response = f"⛔ Error shutting down: {e}"
             update.effective_message.reply_text(response)
@@ -366,7 +390,7 @@ class Telegram(plugins.Plugin):
         self.update_existing_message(update, text, keyboard)
         return
 
-    def soft_restart_mode(self, mode, update):
+    def soft_restart_mode(self, mode, update, context):
         logging.warning("[TELEGRAM] restarting in %s mode ...", mode)
         response = f"🔃 Restarting in {mode} mode..."
         self.update_existing_message(update, response)
@@ -383,6 +407,7 @@ class Telegram(plugins.Plugin):
 
             subprocess.run(["sudo", "systemctl", "restart", "pwnagotchi"])
         except Exception as e:
+            self.send_sticker(update, context, random.choice(stickers_exception))
             logging.error(f"[TELEGRAM] Error restarting: {e}")
             response = f"⛔ Error restarting: {e}"
             update.effective_message.reply_text(response)
@@ -409,6 +434,7 @@ class Telegram(plugins.Plugin):
     def pwnkill(self, agent, update, context):
         try:
             response = "⏰ Sending pwnkill to pwnagotchi..."
+            self.send_sticker(update, context, random.choice(stickers_kill_daemon))
             update.effective_message.reply_text(response)
 
             subprocess.run(["sudo", "killall", "-USR1", "pwnagotchi"])
@@ -436,11 +462,13 @@ class Telegram(plugins.Plugin):
             return [f"⛔ Error reading file: {e}"]
 
     def read_wpa_sec_cracked(self, agent, update, context):
+        # TODO Read every .potfile available
         file_path = "/root/handshakes/wpa-sec.cracked.potfile"
         chunks = self.format_handshake_pot_files(file_path)
         if not chunks or not any(chunk.strip() for chunk in chunks):
-            update.effective_message.reply_text("The wpa-sec.cracked.potfile is empty.")
+            self.update_existing_message("The wpa-sec.cracked.potfile is empty.", update)
         else:
+            self.send_sticker(update, context, random.choice(stickers_handshake_or_wpa))
             chat_id = update.effective_user["id"]
             context.bot.send_chat_action(chat_id, "typing")
             import time
@@ -473,6 +501,7 @@ class Telegram(plugins.Plugin):
 
         response = f"🤝 Total handshakes captured: {count}"
         self.update_existing_message(update, response)
+        self.send_sticker(update, context, random.choice(stickers_handshake_or_wpa))
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
             self.terminate_program()
@@ -620,6 +649,7 @@ class Telegram(plugins.Plugin):
             logging.info("[TELEGRAM] Backup created and moved successfully.")
 
         except Exception as e:
+            self.send_sticker(update, context, random.choice(stickers_exception))
             logging.error(f"[TELEGRAM] Error creating or moving backup: {e}")
 
         # Obtain the file size
@@ -656,6 +686,7 @@ class Telegram(plugins.Plugin):
                 logging.error("[TELEGRAM] No backup file found.")
                 update.effective_message.reply_text("No backup file found.")
         except Exception as e:
+            self.send_sticker(update, context, random.choice(stickers_exception))
             logging.error(f"[TELEGRAM] Error sending backup: {e}")
             response = f"⛔ Error sending backup: {e}"
             update.effective_message.reply_text(response)
