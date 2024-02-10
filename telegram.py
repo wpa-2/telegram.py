@@ -3,7 +3,6 @@ import pwd
 import logging
 import telegram
 import subprocess
-import shutil
 import pwnagotchi
 from time import sleep
 from pwnagotchi import fs
@@ -143,8 +142,7 @@ class Telegram(plugins.Plugin):
     def run_as_user(self, cmd, user):
         uid = pwd.getpwnam(user).pw_uid
         os.setuid(uid)
-        sudo_cmd = f"sudo {cmd}"
-        os.system(sudo_cmd)
+        os.system(cmd)
         os.setuid(0)
 
     def bot_update(self, update):
@@ -169,7 +167,7 @@ class Telegram(plugins.Plugin):
                     check=True,
                 )
 
-                # Add the repository as a safe directory
+                # Add the repository as a safe directory as root
                 logging.debug("[TELEGRAM] Adding telegram-bot repository as safe...")
                 subprocess.run(
                     [
@@ -182,7 +180,19 @@ class Telegram(plugins.Plugin):
                     ],
                     check=True,
                 )
-            # Change directory to telegram-bot if it already exists
+                # Add the repository as a safe directory as the pi user
+                logging.debug("[TELEGRAM] Adding telegram-bot repository as safe for pi...")
+                self.run_as_user(
+                    "git config --global --add safe.directory /home/pi/telegram-bot",
+                    "pi",
+                )
+
+                # Create a symbolic link so when the bot is updated, the new version is used
+                subprocess.run(
+                    ["ln", "-sf", "/home/pi/telegram-bot/telegram.py", plugins_dir],
+                    check=True,
+                )
+            # Change directory to telegram-bot
             os.chdir("telegram-bot")
 
             # Pull the latest changes from the repository
@@ -190,13 +200,6 @@ class Telegram(plugins.Plugin):
                 "[TELEGRAM] Pulling latest changes from telegram-bot repository..."
             )
             subprocess.run(["git", "pull"], check=True)
-
-            # Move the telegram.py file to the plugins_dir, removing existing file if it exists
-            destination_file = os.path.join(plugins_dir, "telegram.py")
-            if os.path.exists(destination_file):
-                os.remove(destination_file)
-            logging.debug("[TELEGRAM] Moving telegram.py to plugins directory...")
-            shutil.move("telegram.py", destination_file)
 
         except subprocess.CalledProcessError as e:
             # Handle errors
