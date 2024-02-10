@@ -91,7 +91,7 @@ class Telegram(plugins.Plugin):
             try:
                 update.message.reply_text(response, reply_markup=reply_markup)
             except AttributeError:
-                self.update_existing_message(update, response, reply_markup)
+                self.update_existing_message(update, response, main_menu)
             except:
                 update.effective_message.reply_text(response, reply_markup=reply_markup)
 
@@ -142,22 +142,35 @@ class Telegram(plugins.Plugin):
                 self.terminate_program()
 
     def update_existing_message(self, update, text, keyboard=[]):
-        old_message = update.callback_query
-        old_message.answer()
-        go_back_button = [
-            InlineKeyboardButton("🔙 Go back", callback_data="start"),
-        ]
-        keyboard.append(go_back_button)
-        old_message.edit_message_text(
-            text=text,
-            reply_markup=InlineKeyboardMarkup(keyboard),
-        )
+        try:
+            old_message = update.callback_query
+            old_message.answer()
+            # Always add the back button
+            go_back_button = [
+                InlineKeyboardButton("🔙 Go back", callback_data="start"),
+            ]
+            keyboard.append(go_back_button)
+            old_message.edit_message_text(
+                text=text,
+                reply_markup=InlineKeyboardMarkup(keyboard),
+            )
+            # Reset keyboard
+            keyboard = []
+        except:
+            if keyboard:
+                update.effective_message.reply_text(
+                    text, reply_markup=InlineKeyboardMarkup(keyboard)
+                )
+            else:
+                update.effective_message.reply_text(text)
+        return
 
     def run_as_user(self, cmd, user):
         uid = pwd.getpwnam(user).pw_uid
         os.setuid(uid)
         os.system(cmd)
         os.setuid(0)
+        return
 
     def bot_update(self, update, context):
         logging.info("[TELEGRAM] Updating bot...")
@@ -228,7 +241,8 @@ class Telegram(plugins.Plugin):
 
         # Send a message indicating success
         response = "✅ Bot updated successfully!"
-        update_existing_message(update, response)
+        self.update_existing_message(update, response)
+        return
 
     def take_screenshot(self, agent, update, context):
         try:
@@ -271,9 +285,9 @@ class Telegram(plugins.Plugin):
             ],
         ]
 
-
-        text="⚠️  This will restart the device, not the daemon.\nSSH or bluetooth will be interrupted\nPlease select an option:"
+        text = "⚠️  This will restart the device, not the daemon.\nSSH or bluetooth will be interrupted\nPlease select an option:"
         self.update_existing_message(update, text, keyboard)
+        return
 
     def reboot_mode(self, mode, update):
         if mode is not None:
@@ -332,6 +346,7 @@ class Telegram(plugins.Plugin):
             logging.error(f"[TELEGRAM] Error shutting down: {e}")
             response = f"⛔ Error shutting down: {e}"
             update.effective_message.reply_text(response)
+        return
 
     def soft_restart(self, update):
         keyboard = [
@@ -345,9 +360,11 @@ class Telegram(plugins.Plugin):
             ],
         ]
 
-
-        text="⚠️  This will restart the daemon, not the device.\nSSH or bluetooth will not be interrupted\nPlease select an option:",
+        text = (
+            "⚠️  This will restart the daemon, not the device.\nSSH or bluetooth will not be interrupted\nPlease select an option:",
+        )
         self.update_existing_message(update, text, keyboard)
+        return
 
     def soft_restart_mode(self, mode, update):
         logging.warning("[TELEGRAM] restarting in %s mode ...", mode)
@@ -369,6 +386,7 @@ class Telegram(plugins.Plugin):
             logging.error(f"[TELEGRAM] Error restarting: {e}")
             response = f"⛔ Error restarting: {e}"
             update.effective_message.reply_text(response)
+        return
 
     def uptime(self, agent, update, context):
         with open("/proc/uptime", "r") as f:
@@ -386,6 +404,7 @@ class Telegram(plugins.Plugin):
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
             self.terminate_program()
+        return
 
     def pwnkill(self, agent, update, context):
         try:
@@ -457,6 +476,7 @@ class Telegram(plugins.Plugin):
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
             self.terminate_program()
+        return
 
     def fetch_inbox(self):
         command = "sudo pwngrid -inbox"
@@ -567,8 +587,10 @@ class Telegram(plugins.Plugin):
     def handle_memtemp(self, agent, update, context):
         reply = f"Memory Usage: {int(pwnagotchi.mem_usage() * 100)}%\n\nCPU Load: {int(pwnagotchi.cpu_load() * 100)}%\n\nCPU Temp: {pwnagotchi.temperature()}c"
         self.update_existing_message(update, reply)
+        return
 
     def create_backup(self, agent, update, context):
+        context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
         backup_files = [
             "/root/brain.json",
             "/root/.api-report.json",
@@ -609,14 +631,10 @@ class Telegram(plugins.Plugin):
                     "📤 Send me the backup here", callback_data="send_backup"
                 ),
             ],
-
         ]
 
         response = f"✅ Backup created and moved successfully. File size: {file_size}"
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
-        update.effective_message.reply_text(response, reply_markup=reply_markup)
-
+        self.update_existing_message(update, response, keyboard)
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
             self.terminate_program()
@@ -651,7 +669,7 @@ class Telegram(plugins.Plugin):
 
             bot = telegram.Bot(self.options["bot_token"])
 
-            message = f"New handshake captured: {access_point['hostname']} - {client_station['mac']}"
+            message = f"🤝 New handshake captured: {access_point['hostname']} - {client_station['mac']}"
             if self.options["send_message"] is True:
                 bot.sendMessage(
                     chat_id=self.options["chat_id"],
