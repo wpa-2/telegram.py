@@ -146,7 +146,7 @@ class Telegram(plugins.Plugin):
         old_message.answer()
         go_back_button = [
             InlineKeyboardButton("🔙 Go back", callback_data="start"),
-        ],
+        ]
         keyboard.append(go_back_button)
         old_message.edit_message_text(
             text=text,
