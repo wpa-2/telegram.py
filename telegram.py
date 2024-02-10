@@ -91,6 +91,10 @@ class Telegram(plugins.Plugin):
             try:
                 update.message.reply_text(response, reply_markup=reply_markup)
             except AttributeError:
+                old_message = update.callback_query
+                old_message.answer()
+                old_message.edit_message_text(text=response, reply_markup=reply_markup)
+            except:
                 update.effective_message.reply_text(response, reply_markup=reply_markup)
 
     def button_handler(self, agent, update, context):
@@ -181,7 +185,9 @@ class Telegram(plugins.Plugin):
                     check=True,
                 )
                 # Add the repository as a safe directory as the pi user
-                logging.debug("[TELEGRAM] Adding telegram-bot repository as safe for pi...")
+                logging.debug(
+                    "[TELEGRAM] Adding telegram-bot repository as safe for pi..."
+                )
                 self.run_as_user(
                     "git config --global --add safe.directory /home/pi/telegram-bot",
                     "pi",
@@ -254,9 +260,12 @@ class Telegram(plugins.Plugin):
             ],
         ]
 
-        response = "⚠️  This will restart the device, not the daemon.\nSSH or bluetooth will be interrupted\nPlease select an option:"
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        update.effective_message.reply_text(response, reply_markup=reply_markup)
+        old_message = update.callback_query
+        old_message.answer()
+        old_message.edit_message_text(
+            text="⚠️  This will restart the device, not the daemon.\nSSH or bluetooth will be interrupted\nPlease select an option:",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+        )
 
     def reboot_mode(self, mode, update):
         if mode is not None:
@@ -331,9 +340,12 @@ class Telegram(plugins.Plugin):
             ],
         ]
 
-        response = "⚠️  This will restart the daemon, not the device.\nSSH or bluetooth will not be interrupted\nPlease select an option:"
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        update.effective_message.reply_text(response, reply_markup=reply_markup)
+        old_message = update.callback_query
+        old_message.answer()
+        old_message.edit_message_text(
+            text="⚠️  This will restart the daemon, not the device.\nSSH or bluetooth will not be interrupted\nPlease select an option:",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+        )
 
     def soft_restart_mode(self, mode, update):
         logging.warning("[TELEGRAM] restarting in %s mode ...", mode)
