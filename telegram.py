@@ -91,9 +91,7 @@ class Telegram(plugins.Plugin):
             try:
                 update.message.reply_text(response, reply_markup=reply_markup)
             except AttributeError:
-                old_message = update.callback_query
-                old_message.answer()
-                old_message.edit_message_text(text=response, reply_markup=reply_markup)
+                self.update_existing_message(update, response, reply_markup)
             except:
                 update.effective_message.reply_text(response, reply_markup=reply_markup)
 
@@ -143,6 +141,18 @@ class Telegram(plugins.Plugin):
             if self.completed_tasks == self.num_tasks:
                 self.terminate_program()
 
+    def update_existing_message(self, update, text, keyboard=[]):
+        old_message = update.callback_query
+        old_message.answer()
+        go_back_button = [
+            InlineKeyboardButton("🔙 Go back", callback_data="start"),
+        ],
+        keyboard.append(go_back_button)
+        old_message.edit_message_text(
+            text=text,
+            reply_markup=InlineKeyboardMarkup(keyboard),
+        )
+
     def run_as_user(self, cmd, user):
         uid = pwd.getpwnam(user).pw_uid
         os.setuid(uid)
@@ -152,7 +162,7 @@ class Telegram(plugins.Plugin):
     def bot_update(self, update, context):
         logging.info("[TELEGRAM] Updating bot...")
         response = "🆙 Updating bot..."
-        update.effective_message.reply_text(response)
+        self.update_existing_message(update, response)
         chat_id = update.effective_user["id"]
         context.bot.send_chat_action(chat_id=chat_id, action="upload_document")
         try:
@@ -218,7 +228,7 @@ class Telegram(plugins.Plugin):
 
         # Send a message indicating success
         response = "✅ Bot updated successfully!"
-        update.effective_message.reply_text(response)
+        update_existing_message(update, response)
 
     def take_screenshot(self, agent, update, context):
         try:
@@ -259,17 +269,11 @@ class Telegram(plugins.Plugin):
                     "🛜 Reboot to auto mode", callback_data="reboot_to_auto"
                 ),
             ],
-            [
-                InlineKeyboardButton("🔙 Go back", callback_data="start"),
-            ],
         ]
 
-        old_message = update.callback_query
-        old_message.answer()
-        old_message.edit_message_text(
-            text="⚠️  This will restart the device, not the daemon.\nSSH or bluetooth will be interrupted\nPlease select an option:",
-            reply_markup=InlineKeyboardMarkup(keyboard),
-        )
+
+        text="⚠️  This will restart the device, not the daemon.\nSSH or bluetooth will be interrupted\nPlease select an option:"
+        self.update_existing_message(update, text, keyboard)
 
     def reboot_mode(self, mode, update):
         if mode is not None:
@@ -308,7 +312,7 @@ class Telegram(plugins.Plugin):
 
     def shutdown(self, update):
         response = "📴 Shutting down now..."
-        update.effective_message.reply_text(response)
+        self.update_existing_message(update, response)
         logging.warning("[TELEGRAM] shutting down ...")
 
         try:
@@ -339,22 +343,16 @@ class Telegram(plugins.Plugin):
                     "🛜 Restart to auto mode", callback_data="soft_restart_to_auto"
                 ),
             ],
-            [
-                InlineKeyboardButton("🔙 Go back", callback_data="start"),
-            ],
         ]
 
-        old_message = update.callback_query
-        old_message.answer()
-        old_message.edit_message_text(
-            text="⚠️  This will restart the daemon, not the device.\nSSH or bluetooth will not be interrupted\nPlease select an option:",
-            reply_markup=InlineKeyboardMarkup(keyboard),
-        )
+
+        text="⚠️  This will restart the daemon, not the device.\nSSH or bluetooth will not be interrupted\nPlease select an option:",
+        self.update_existing_message(update, text, keyboard)
 
     def soft_restart_mode(self, mode, update):
         logging.warning("[TELEGRAM] restarting in %s mode ...", mode)
         response = f"🔃 Restarting in {mode} mode..."
-        update.effective_message.reply_text(response)
+        self.update_existing_message(update, response)
 
         if view.ROOT:
             view.ROOT.on_custom(f"Restarting daemon to {mode}")
@@ -383,7 +381,7 @@ class Telegram(plugins.Plugin):
         response = (
             f"⏰ Uptime: {uptime_hours} hours and {uptime_remaining_minutes} minutes"
         )
-        update.effective_message.reply_text(response)
+        self.update_existing_message(update, response)
 
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
@@ -455,8 +453,7 @@ class Telegram(plugins.Plugin):
         )
 
         response = f"🤝 Total handshakes captured: {count}"
-        update.effective_message.reply_text(response)
-
+        self.update_existing_message(update, response)
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
             self.terminate_program()
@@ -569,7 +566,7 @@ class Telegram(plugins.Plugin):
 
     def handle_memtemp(self, agent, update, context):
         reply = f"Memory Usage: {int(pwnagotchi.mem_usage() * 100)}%\n\nCPU Load: {int(pwnagotchi.cpu_load() * 100)}%\n\nCPU Temp: {pwnagotchi.temperature()}c"
-        context.bot.send_message(chat_id=update.effective_chat.id, text=reply)
+        self.update_existing_message(update, reply)
 
     def create_backup(self, agent, update, context):
         backup_files = [
@@ -612,9 +609,7 @@ class Telegram(plugins.Plugin):
                     "📤 Send me the backup here", callback_data="send_backup"
                 ),
             ],
-            [
-                InlineKeyboardButton("🔙 Go back", callback_data="start"),
-            ],
+
         ]
 
         response = f"✅ Backup created and moved successfully. File size: {file_size}"
