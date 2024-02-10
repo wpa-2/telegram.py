@@ -94,6 +94,7 @@ class Telegram(plugins.Plugin):
                 self.update_existing_message(update, response, main_menu)
             except:
                 update.effective_message.reply_text(response, reply_markup=reply_markup)
+        return
 
     def button_handler(self, agent, update, context):
         if update.effective_chat.id == int(self.options["chat_id"]):
@@ -145,11 +146,12 @@ class Telegram(plugins.Plugin):
         try:
             old_message = update.callback_query
             old_message.answer()
-            # Always add the back button
             go_back_button = [
-                InlineKeyboardButton("🔙 Go back", callback_data="start"),
-            ]
-            keyboard.append(go_back_button)
+                    InlineKeyboardButton("🔙 Go back", callback_data="start"),
+                ]
+            if keyboard != main_menu and go_back_button not in keyboard:
+                # Add back button if the keyboard is not the main menu and the keyboard does not have the back button
+                keyboard.append(go_back_button)
             old_message.edit_message_text(
                 text=text,
                 reply_markup=InlineKeyboardMarkup(keyboard),
@@ -360,9 +362,7 @@ class Telegram(plugins.Plugin):
             ],
         ]
 
-        text = (
-            "⚠️  This will restart the daemon, not the device.\nSSH or bluetooth will not be interrupted\nPlease select an option:",
-        )
+        text = "⚠️  This will restart the daemon, not the device.\nSSH or bluetooth will not be interrupted\nPlease select an option:"
         self.update_existing_message(update, text, keyboard)
         return
 
