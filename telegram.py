@@ -222,7 +222,8 @@ class Telegram(plugins.Plugin):
 
     def take_screenshot(self, agent, update, context):
         try:
-            context.bot.send_chat_action("upload_photo")
+            chat_id = update.effective_user["id"]
+            context.bot.send_chat_action(chat_id, "upload_photo")
             display = agent.view()
             picture_path = "/root/pwnagotchi_screenshot.png"
 
@@ -423,7 +424,8 @@ class Telegram(plugins.Plugin):
         if not chunks or not any(chunk.strip() for chunk in chunks):
             update.effective_message.reply_text("The wpa-sec.cracked.potfile is empty.")
         else:
-            context.bot.send_chat_action("typing")
+            chat_id = update.effective_user["id"]
+            context.bot.send_chat_action(chat_id, "typing")
             import time
 
             message_counter = 0
@@ -626,7 +628,9 @@ class Telegram(plugins.Plugin):
         return backup_file_name
 
     def send_backup(self, update, context):
-        context.bot.send_chat_action("upload_document")
+        chat_id = update.effective_user["id"]
+        context.bot.send_chat_action(chat_id, "upload_document")
+
         try:
             backup = self.last_backup
             if backup:
