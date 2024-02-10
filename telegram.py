@@ -14,6 +14,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import MessageHandler, Filters, CallbackQueryHandler, Updater
 
 home_dir = "/home/pi"
+# TODO Get plugins dir from config file
 plugins_dir = "/usr/local/share/pwnagotchi/custom-plugins"
 
 main_menu = [
@@ -153,46 +154,60 @@ class Telegram(plugins.Plugin):
         try:
             # Change directory to /home/pi
             os.chdir(home_dir)
-            
+
             # Check if the telegram-bot folder exists
             if not os.path.exists("telegram-bot"):
                 # Clone the telegram-bot repository if it doesn't exist
                 logging.debug("[TELEGRAM] Cloning telegram-bot repository...")
-                subprocess.run(["git", "clone", "https://github.com/wpa-2/telegram.py", "telegram-bot"], check=True)
-                
+                subprocess.run(
+                    [
+                        "git",
+                        "clone",
+                        "https://github.com/wpa-2/telegram.py",
+                        "telegram-bot",
+                    ],
+                    check=True,
+                )
+
                 # Add the repository as a safe directory
                 logging.debug("[TELEGRAM] Adding telegram-bot repository as safe...")
-                subprocess.run(["git", "config", "--global", "--add", "safe.directory", "/home/pi/telegram-bot"], check=True)
-                
-                # Change directory to telegram-bot
-                os.chdir("telegram-bot")
-            
-            else:
-                # Change directory to telegram-bot if it already exists
-                os.chdir("telegram-bot")
-            
+                subprocess.run(
+                    [
+                        "git",
+                        "config",
+                        "--global",
+                        "--add",
+                        "safe.directory",
+                        "/home/pi/telegram-bot",
+                    ],
+                    check=True,
+                )
+            # Change directory to telegram-bot if it already exists
+            os.chdir("telegram-bot")
+
             # Pull the latest changes from the repository
-            logging.info("[TELEGRAM] Pulling latest changes from telegram-bot repository...")
+            logging.info(
+                "[TELEGRAM] Pulling latest changes from telegram-bot repository..."
+            )
             subprocess.run(["git", "pull"], check=True)
-            
+
             # Move the telegram.py file to the plugins_dir, removing existing file if it exists
             destination_file = os.path.join(plugins_dir, "telegram.py")
             if os.path.exists(destination_file):
                 os.remove(destination_file)
             logging.debug("[TELEGRAM] Moving telegram.py to plugins directory...")
             shutil.move("telegram.py", destination_file)
-            
+
         except subprocess.CalledProcessError as e:
             # Handle errors
             logging.error(f"[TELEGRAM] Error updating bot: {e}")
             response = f"⛔ Error updating bot: {e}"
             update.effective_message.reply_text(response)
             return
-        
-        # Send a message indicating success
-        response = "🆗 Bot updated successfully!"
-        update.effective_message.reply_text(response)
 
+        # Send a message indicating success
+        response = "✅ Bot updated successfully!"
+        update.effective_message.reply_text(response)
 
     def take_screenshot(self, agent, update, context):
         try:
@@ -215,7 +230,7 @@ class Telegram(plugins.Plugin):
             with open(picture_path, "rb") as photo:
                 context.bot.send_photo(chat_id=update.effective_chat.id, photo=photo)
 
-            response = "🆗 Screenshot taken and sent!"
+            response = "✅ Screenshot taken and sent!"
         except Exception as e:
             response = f"⛔ Error taking screenshot: {e}"
 
@@ -395,7 +410,9 @@ class Telegram(plugins.Plugin):
             message_counter = 0
             for chunk in chunks:
                 if message_counter >= 20:
-                    response = "💤 Sleeping for 60 seconds to avoid flooding the chat..."
+                    response = (
+                        "💤 Sleeping for 60 seconds to avoid flooding the chat..."
+                    )
                     update.effective_message.reply_text(response)
                     time.sleep(60)
                     message_counter = 0
@@ -579,7 +596,7 @@ class Telegram(plugins.Plugin):
             ],
         ]
 
-        response = f"🆗 Backup created and moved successfully. File size: {file_size}"
+        response = f"✅ Backup created and moved successfully. File size: {file_size}"
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         update.effective_message.reply_text(response, reply_markup=reply_markup)
