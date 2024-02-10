@@ -135,9 +135,9 @@ class Telegram(plugins.Plugin):
             elif query.data == "soft_restart_to_auto":
                 self.soft_restart_mode("AUTO", update)
             elif query.data == "send_backup":
-                self.send_backup(update)
+                self.send_backup(update, context)
             elif query.data == "bot_update":
-                self.bot_update(update)
+                self.bot_update(update, context)
 
             self.completed_tasks += 1
             if self.completed_tasks == self.num_tasks:
@@ -149,10 +149,12 @@ class Telegram(plugins.Plugin):
         os.system(cmd)
         os.setuid(0)
 
-    def bot_update(self, update):
+    def bot_update(self, update, context):
         logging.info("[TELEGRAM] Updating bot...")
         response = "🆙 Updating bot..."
         update.effective_message.reply_text(response)
+        chat_id = update.effective_user["id"]
+        context.bot.send_chat_action(chat_id=chat_id, action="upload_document")
         try:
             # Change directory to /home/pi
             os.chdir(home_dir)
@@ -220,6 +222,7 @@ class Telegram(plugins.Plugin):
 
     def take_screenshot(self, agent, update, context):
         try:
+            context.bot.send_chat_action("upload_photo")
             display = agent.view()
             picture_path = "/root/pwnagotchi_screenshot.png"
 
@@ -420,6 +423,7 @@ class Telegram(plugins.Plugin):
         if not chunks or not any(chunk.strip() for chunk in chunks):
             update.effective_message.reply_text("The wpa-sec.cracked.potfile is empty.")
         else:
+            context.bot.send_chat_action("typing")
             import time
 
             message_counter = 0
@@ -621,7 +625,8 @@ class Telegram(plugins.Plugin):
             self.terminate_program()
         return backup_file_name
 
-    def send_backup(self, update):
+    def send_backup(self, update, context):
+        context.bot.send_chat_action("upload_document")
         try:
             backup = self.last_backup
             if backup:
