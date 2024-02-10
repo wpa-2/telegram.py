@@ -164,6 +164,8 @@ class Telegram(plugins.Plugin):
             if self.completed_tasks == self.num_tasks:
                 self.terminate_program()
 
+    # TODO Create a function to handle exceptions and send all the exceptions to that function
+
     def send_sticker(self, update, context, fileid):
         user_id = update.effective_message.chat_id
         context.bot.send_sticker(chat_id=user_id, sticker=fileid)
@@ -264,12 +266,12 @@ class Telegram(plugins.Plugin):
         except subprocess.CalledProcessError as e:
             # Handle errors
             logging.error(f"[TELEGRAM] Error updating bot: {e}")
-            response = f"⛔ Error updating bot: {e}"
-            update.effective_message.reply_text(response)
+            response = f"⛔ Error updating bot: <code>{e}</code>"
+            update.effective_message.reply_text(response, parse_mode="HTML")
             return
 
         # Send a message indicating success
-        response = "✅ Bot updated successfully!"
+        response = "✅ Bot updated </b>successfully!</b>"
         self.update_existing_message(update, response)
         return
 
@@ -299,9 +301,9 @@ class Telegram(plugins.Plugin):
             response = "✅ Screenshot taken and sent!"
         except Exception as e:
             self.send_sticker(update, context, random.choice(stickers_exception))
-            response = f"⛔ Error taking screenshot: {e}"
+            response = f"⛔ Error taking screenshot: <code>{e}</code>"
 
-        update.effective_message.reply_text(response)
+        update.effective_message.reply_text(response, parse_mode="HTML")
 
     def reboot(self, agent, update, context):
         keyboard = [
@@ -322,7 +324,7 @@ class Telegram(plugins.Plugin):
     def reboot_mode(self, mode, update, context):
         if mode is not None:
             mode = mode.upper()
-            reboot_text = f"🔄 rebooting in {mode} mode"
+            reboot_text = f"🔄 rebooting in <b>{mode}</b> mode"
         else:
             reboot_text = "🔄 rebooting..."
 
@@ -330,7 +332,7 @@ class Telegram(plugins.Plugin):
             response = reboot_text
             logging.warning("[TELEGRAM]", reboot_text)
 
-            update.effective_message.reply_text(response)
+            self.update_existing_message(update, response)
 
             if view.ROOT:
                 view.ROOT.on_custom("Rebooting...")
@@ -352,11 +354,11 @@ class Telegram(plugins.Plugin):
         except Exception as e:
             self.send_sticker(update, context, random.choice(stickers_exception))
             logging.error(f"[TELEGRAM] Error rebooting: {e}")
-            response = f"⛔ Error rebooting: {e}"
+            response = f"⛔ Error rebooting: <b>{e}</b>"
             update.effective_message.reply_text(response)
 
     def shutdown(self, update, context):
-        response = "📴 Shutting down now..."
+        response = "📴 Shutting down <b>now</b>..."
         self.update_existing_message(update, response)
         logging.warning("[TELEGRAM] shutting down ...")
 
@@ -376,7 +378,7 @@ class Telegram(plugins.Plugin):
         except Exception as e:
             self.send_sticker(update, context, random.choice(stickers_exception))
             logging.error(f"[TELEGRAM] Error shutting down: {e}")
-            response = f"⛔ Error shutting down: {e}"
+            response = f"⛔ Error shutting down: <code>{e}</code>"
             update.effective_message.reply_text(response)
         return
 
@@ -398,7 +400,7 @@ class Telegram(plugins.Plugin):
 
     def soft_restart_mode(self, mode, update, context):
         logging.warning("[TELEGRAM] restarting in %s mode ...", mode)
-        response = f"🔃 Restarting in {mode} mode..."
+        response = f"🔃 Restarting in <b>{mode}</b> mode..."
         self.update_existing_message(update, response)
 
         if view.ROOT:
@@ -415,8 +417,8 @@ class Telegram(plugins.Plugin):
         except Exception as e:
             self.send_sticker(update, context, random.choice(stickers_exception))
             logging.error(f"[TELEGRAM] Error restarting: {e}")
-            response = f"⛔ Error restarting: {e}"
-            update.effective_message.reply_text(response)
+            response = f"⛔ Error restarting: <code>{e}</code>"
+            update.effective_message.reply_text(response, parse_mode="HTML")
         return
 
     def uptime(self, agent, update, context):
@@ -439,14 +441,14 @@ class Telegram(plugins.Plugin):
 
     def pwnkill(self, agent, update, context):
         try:
-            response = "⏰ Sending pwnkill to pwnagotchi..."
+            response = "⏰ Sending <code>pwnkill</code> to pwnagotchi..."
             self.send_sticker(update, context, random.choice(stickers_kill_daemon))
-            update.effective_message.reply_text(response)
-
+            update.effective_message.reply_text(response, parse_mode="HTML")
+            # TODO Maybe it's better to use systemctl stop pwnagotchi? To turn it off gracefully?
             subprocess.run(["sudo", "killall", "-USR1", "pwnagotchi"])
         except subprocess.CalledProcessError as e:
-            response = f"⛔ Error executing pwnkill command: {e}"
-            update.effective_message.reply_text(response)
+            response = f"⛔ Error executing pwnkill command: <code>{e}</code>"
+            update.effective_message.reply_text(response, parse_mode="HTML")
 
     def format_handshake_pot_files(self, file_path):
         try:
@@ -460,7 +462,10 @@ class Telegram(plugins.Plugin):
                     if len(message + line) > 4096:
                         messages_list.append(message)
                         message = ""
-                    message += ":".join(pwned)
+                    # This code formatting allow us to copy the code block with one tap
+                    # SSID:password
+                    message += ":<code>".join(pwned)
+                    message = message + "</code>"
                 messages_list.append(message)
             return messages_list
 
@@ -485,12 +490,13 @@ class Telegram(plugins.Plugin):
             for chunk in chunks:
                 if message_counter >= 20:
                     response = (
-                        "💤 Sleeping for 60 seconds to avoid flooding the chat..."
+                        "💤 Sleeping for <b>60</b> seconds to avoid <i>flooding</i> the chat..."
                     )
                     update.effective_message.reply_text(response)
                     time.sleep(60)
+                    context.bot.send_chat_action(chat_id, "typing", timeout=60)
                     message_counter = 0
-                update.effective_message.reply_text(chunk)
+                update.effective_message.reply_text(chunk, parse_mode="HTML")
                 message_counter += 1
 
         self.completed_tasks += 1
@@ -671,8 +677,12 @@ class Telegram(plugins.Plugin):
 
         # Obtain the file size
 
+        # Get the size on bytes
         file_size = os.path.getsize(f"/home/pi/{backup_file_name}")
+        # Convert to mb
         file_size /= 1024 * 1024
+        # Round to 2 decimal places
+        file_size = round(file_size, 2)
         keyboard = [
             [
                 InlineKeyboardButton(
@@ -681,7 +691,7 @@ class Telegram(plugins.Plugin):
             ],
         ]
 
-        response = f"✅ Backup created and moved successfully. File size: {file_size}"
+        response = f"✅ Backup created and moved successfully to <code>/home/pi</code>.\nFile size: <b>{file_size} MB</b>"
         self.update_existing_message(update, response, keyboard)
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
@@ -706,8 +716,8 @@ class Telegram(plugins.Plugin):
         except Exception as e:
             self.send_sticker(update, context, random.choice(stickers_exception))
             logging.error(f"[TELEGRAM] Error sending backup: {e}")
-            response = f"⛔ Error sending backup: {e}"
-            update.effective_message.reply_text(response)
+            response = f"⛔ Error sending backup: <code>{e}</code>"
+            update.effective_message.reply_text(response, parse_mode="HTML")
 
     def on_handshake(self, agent, filename, access_point, client_station):
         config = agent.config()
