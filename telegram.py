@@ -466,7 +466,7 @@ class Telegram(plugins.Plugin):
         file_path = "/root/handshakes/wpa-sec.cracked.potfile"
         chunks = self.format_handshake_pot_files(file_path)
         if not chunks or not any(chunk.strip() for chunk in chunks):
-            self.update_existing_message("The wpa-sec.cracked.potfile is empty.", update)
+            self.update_existing_message(text="The wpa-sec.cracked.potfile is empty.", update=update)
         else:
             self.send_sticker(update, context, random.choice(stickers_handshake_or_wpa))
             chat_id = update.effective_user["id"]
