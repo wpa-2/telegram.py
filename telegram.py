@@ -104,14 +104,18 @@ class Telegram(plugins.Plugin):
                 self.options["bot_name"] = "Pwnagotchi"
 
             bot_name = self.options["bot_name"]
-            response = f"🖖 Welcome to {bot_name}\n\nPlease select an option:"
+            response = f"🖖 Welcome to <b>{bot_name}</b>\n\nPlease select an option:"
             reply_markup = InlineKeyboardMarkup(main_menu)
             try:
-                update.message.reply_text(response, reply_markup=reply_markup)
+                update.message.reply_text(
+                    response, reply_markup=reply_markup, parse_mode="HTML"
+                )
             except AttributeError:
                 self.update_existing_message(update, response, main_menu)
             except:
-                update.effective_message.reply_text(response, reply_markup=reply_markup)
+                update.effective_message.reply_text(
+                    response, reply_markup=reply_markup, parse_mode="HTML"
+                )
         return
 
     def button_handler(self, agent, update, context):
@@ -177,6 +181,7 @@ class Telegram(plugins.Plugin):
             old_message.edit_message_text(
                 text=text,
                 reply_markup=InlineKeyboardMarkup(keyboard),
+                parse_mode="HTML",
             )
             # Reset keyboard
             keyboard = []
@@ -467,7 +472,9 @@ class Telegram(plugins.Plugin):
         file_path = "/root/handshakes/wpa-sec.cracked.potfile"
         chunks = self.format_handshake_pot_files(file_path)
         if not chunks or not any(chunk.strip() for chunk in chunks):
-            self.update_existing_message(text="The wpa-sec.cracked.potfile is empty.", update=update)
+            self.update_existing_message(
+                text="The wpa-sec.cracked.potfile is empty.", update=update
+            )
         else:
             self.send_sticker(update, context, random.choice(stickers_handshake_or_wpa))
             chat_id = update.effective_user["id"]
@@ -500,7 +507,7 @@ class Telegram(plugins.Plugin):
             ]
         )
 
-        response = f"🤝 Total handshakes captured: {count}"
+        response = f"🤝 Total handshakes captured: <b>{count}</b>"
         self.update_existing_message(update, response)
         self.send_sticker(update, context, random.choice(stickers_handshake_or_wpa))
         self.completed_tasks += 1
@@ -574,12 +581,15 @@ class Telegram(plugins.Plugin):
                     self.options["bot_name"] = "Pwnagotchi"
 
                 bot_name = self.options["bot_name"]
-                response = f"🤝 Welcome to {bot_name}!\n\nPlease select an option:"
+                response = (
+                    f"🖖 Welcome to <b>{bot_name}!</b>\n\nPlease select an option:"
+                )
                 reply_markup = InlineKeyboardMarkup(main_menu)
                 bot.send_message(
                     chat_id=self.options["chat_id"],
                     text=response,
                     reply_markup=reply_markup,
+                    parse_mode="HTML",
                 )
                 self.start_menu_sent = True
 
@@ -662,6 +672,7 @@ class Telegram(plugins.Plugin):
         # Obtain the file size
 
         file_size = os.path.getsize(f"/home/pi/{backup_file_name}")
+        file_size /= 1024 * 1024
         keyboard = [
             [
                 InlineKeyboardButton(
