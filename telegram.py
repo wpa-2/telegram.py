@@ -63,8 +63,8 @@ stickers_handshake_or_wpa = [
 
 
 class Telegram(plugins.Plugin):
-    __author__ = "WPA2"
-    __version__ = "0.2.0"
+    __author__ = "WPA2 editted by nothingbutlucas"
+    __version__ = "0.2.1"
     __license__ = "GPL3"
     __description__ = "Chats to telegram"
     __dependencies__ = ("python-telegram-bot==13.15",)
