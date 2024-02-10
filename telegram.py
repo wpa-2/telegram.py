@@ -11,6 +11,7 @@ from pwnagotchi.ui import view
 from pwnagotchi.voice import Voice
 import pwnagotchi.plugins as plugins
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.botcommand import BotCommand
 from telegram.ext import MessageHandler, Filters, CallbackQueryHandler, Updater
 
 home_dir = "/home/pi"
@@ -553,6 +554,12 @@ class Telegram(plugins.Plugin):
         try:
             logging.info("[TELEGRAM] Connecting to Telegram...")
             bot = telegram.Bot(self.options["bot_token"])
+            bot.set_my_commands(
+                commands=[
+                    BotCommand(command="start", description="See buttons menu"),
+                ],
+                scope=telegram.BotCommandScopeAllPrivateChats(),
+            )
             if self.updater is None:
                 self.updater = Updater(
                     token=self.options["bot_token"], use_context=True
