@@ -330,7 +330,7 @@ class Telegram(plugins.Plugin):
             old_message = update.callback_query
             old_message.answer()
             go_back_button = [
-                InlineKeyboardButton("🔙 Go back", callback_data="start"),
+                InlineKeyboardButton("📲 Open Menu", callback_data="start"),
             ]
             if keyboard != main_menu and go_back_button not in keyboard:
                 # Add back button if the keyboard is not the main menu and the keyboard does not have the back button
@@ -751,15 +751,20 @@ class Telegram(plugins.Plugin):
     def help(self, update, context):
         list_of_commands_with_descriptions = """
 <b><u> Telegram Bot Commands </u></b>
+
 /start - See buttons menu
 /menu - See buttons menu
 /bot_update - Update the bot
 /help - Show this message
+
 <b><u> Hacker commands </u></b>
+
 /rot13 <code>text</code> - Encode/Decode ROT13
 /debase64 <code>text</code> - Decode Base64
 /base64 <code>text</code> - Encode Base64
+
 <b><u> System commands </u></b>
+
 /reboot_to_manual - Reboot the device to manual mode
 /reboot_to_auto - Reboot the device to auto mode
 /shutdown - Shutdown the device
@@ -768,14 +773,18 @@ class Telegram(plugins.Plugin):
 /cmd <code>command</code> - Run a command (As sudo)
 /kill_ps <code>ps</code> - Kill a process (By id)
 /kill_ps_name <code>ps</code> - Kill a process (By name)
+
 <b><u> Pwnagotchi commands </u></b>
+
 /send_backup - Send the backup if it is available
 /fetch_pwngrid_inbox - Fetch the Pwngrid inbox
 /handshake_count - Get the handshake count
 /read_wpa_sec_cracked - Read the wpa-sec.cracked.potfile
 /take_screenshot - Take a screenshot
 /create_backup - Create a backup
+
 <b><u> Daemon commands </u></b>
+
 /pwnkill - Kill the daemon
 /soft_restart_to_manual - Restart the daemon to manual mode
 /soft_restart_to_auto - Restart the daemon to auto mode
