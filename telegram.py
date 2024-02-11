@@ -93,6 +93,10 @@ class Telegram(plugins.Plugin):
             MessageHandler(
                 Filters.regex("^/start$"),
                 lambda update, context: self.start(agent, update, context),
+            ),
+            CommandHandler(
+                "menu",
+                lambda update, context: self.start(agent, update, context),
             )
         )
         dispatcher.add_handler(
@@ -670,23 +674,24 @@ class Telegram(plugins.Plugin):
 
     def help(self, update, context):
         list_of_commands_with_descriptions = """
-        <b> Telegram Bot Commands </b>
+    <b> Telegram Bot Commands </b>
         /start - See buttons menu
+        /menu - See buttons menu
         /bot_update - Update the bot
-        <b> System commands </b>
+    <b> System commands </b>
         /reboot_to_manual - Reboot the device to manual mode
         /reboot_to_auto - Reboot the device to auto mode
         /shutdown - Shutdown the device
         /read_memtemp - Read memory and temperature
         /uptime - Get the uptime of the device
-        <b> Pwnagotchi commands </b>
+    <b> Pwnagotchi commands </b>
         /send_backup - Send the backup if it is available
         /fetch_pwngrid_inbox - Fetch the Pwngrid inbox
         /handshake_count - Get the handshake count
         /read_wpa_sec_cracked - Read the wpa-sec.cracked.potfile
         /take_screenshot - Take a screenshot
         /create_backup - Create a backup
-        <b> Daemon commands </b>
+    <b> Daemon commands </b>
         /pwnkill - Kill the daemon
         /soft_restart_to_manual - Restart the daemon to manual mode
         /soft_restart_to_auto - Restart the daemon to auto mode
