@@ -117,49 +117,82 @@ class Telegram(plugins.Plugin):
                 "uptime", lambda update, context: self.uptime(agent, update, context)
             )
         )
-        CommandHandler(
-            "handshake_count",
-            lambda update, context: self.handshake_count(agent, update, context),
+        dispatcher.add_handler(
+            CommandHandler(
+                "handshake_count",
+                lambda update, context: self.handshake_count(agent, update, context),
+            )
         )
-        CommandHandler(
-            "read_wpa_sec_cracked",
-            lambda update, context: self.read_wpa_sec_cracked(agent, update, context),
+        dispatcher.add_handler(
+            CommandHandler(
+                "read_wpa_sec_cracked",
+                lambda update, context: self.read_wpa_sec_cracked(
+                    agent, update, context
+                ),
+            )
         )
-        CommandHandler(
-            "fetch_pwngrid_inbox",
-            lambda update, context: self.handle_pwngrid_inbox(agent, update, context),
+        dispatcher.add_handler(
+            CommandHandler(
+                "fetch_pwngrid_inbox",
+                lambda update, context: self.handle_pwngrid_inbox(
+                    agent, update, context
+                ),
+            )
         )
-        CommandHandler(
-            "read_memtemp",
-            lambda update, context: self.handle_memtemp(agent, update, context),
+        dispatcher.add_handler(
+            CommandHandler(
+                "read_memtemp",
+                lambda update, context: self.handle_memtemp(agent, update, context),
+            )
         )
-        CommandHandler(
-            "take_screenshot",
-            lambda update, context: self.take_screenshot(agent, update, context),
+        dispatcher.add_handler(
+            CommandHandler(
+                "take_screenshot",
+                lambda update, context: self.take_screenshot(agent, update, context),
+            )
         )
-        CommandHandler(
-            "create_backup",
-            lambda update, context: self.create_backup(agent, update, context),
+        dispatcher.add_handler(
+            CommandHandler(
+                "create_backup",
+                lambda update, context: self.create_backup(agent, update, context),
+            )
         )
-        CommandHandler(
-            "pwnkill", lambda update, context: self.pwnkill(agent, update, context)
+        dispatcher.add_handler(
+            CommandHandler(
+                "pwnkill", lambda update, context: self.pwnkill(agent, update, context)
+            )
         )
-        CommandHandler(
-            "soft_restart", lambda update, context: self.soft_restart(update)
+        dispatcher.add_handler(
+            CommandHandler(
+                "soft_restart", lambda update, context: self.soft_restart(update)
+            )
         )
-        CommandHandler(
-            "soft_restart_to_manual",
-            lambda update, context: self.soft_restart_mode("MANUAL", update, context),
+        dispatcher.add_handler(
+            CommandHandler(
+                "soft_restart_to_manual",
+                lambda update, context: self.soft_restart_mode(
+                    "MANUAL", update, context
+                ),
+            )
         )
-        CommandHandler(
-            "soft_restart_to_auto",
-            lambda update, context: self.soft_restart_mode("AUTO", update, context),
+        dispatcher.add_handler(
+            CommandHandler(
+                "soft_restart_to_auto",
+                lambda update, context: self.soft_restart_mode("AUTO", update, context),
+            )
         )
-        CommandHandler(
-            "send_backup", lambda update, context: self.send_backup(update, context)
+        dispatcher.add_handler(
+            CommandHandler(
+                "send_backup", lambda update, context: self.send_backup(update, context)
+            )
         )
-        CommandHandler(
-            "bot_update", lambda update, context: self.bot_update(update, context)
+        dispatcher.add_handler(
+            CommandHandler(
+                "bot_update", lambda update, context: self.bot_update(update, context)
+            )
+        )
+        dispatcher.add_handler(
+            CommandHandler("help", lambda update, context: self.help(update, context))
         )
         dispatcher.add_handler(
             CallbackQueryHandler(
@@ -715,7 +748,7 @@ class Telegram(plugins.Plugin):
                     BotCommand(
                         command="help",
                         description="Get the list of available commands and their descriptions",
-                    )
+                    ),
                 ],
                 scope=telegram.BotCommandScopeAllPrivateChats(),
             )
