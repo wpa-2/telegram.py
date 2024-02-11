@@ -161,7 +161,6 @@ class Telegram(plugins.Plugin):
         CommandHandler(
             "bot_update", lambda update, context: self.bot_update(update, context)
         )
-
         dispatcher.add_handler(
             CallbackQueryHandler(
                 lambda update, context: self.button_handler(agent, update, context)
@@ -627,6 +626,32 @@ class Telegram(plugins.Plugin):
                 text="No messages found in Pwngrid inbox.",
             )
 
+    def help(self, update, context):
+        list_of_commands_with_descriptions = """
+        <b> Telegram Bot Commands </b>
+        /start - See buttons menu
+        /bot_update - Update the bot
+        <b> System commands </b>
+        /reboot_to_manual - Reboot the device to manual mode
+        /reboot_to_auto - Reboot the device to auto mode
+        /shutdown - Shutdown the device
+        /read_memtemp - Read memory and temperature
+        /uptime - Get the uptime of the device
+        <b> Pwnagotchi commands </b>
+        /send_backup - Send the backup if it is available
+        /fetch_pwngrid_inbox - Fetch the Pwngrid inbox
+        /handshake_count - Get the handshake count
+        /read_wpa_sec_cracked - Read the wpa-sec.cracked.potfile
+        /take_screenshot - Take a screenshot
+        /create_backup - Create a backup
+        <b> Daemon commands </b>
+        /pwnkill - Kill the daemon
+        /soft_restart_to_manual - Restart the daemon to manual mode
+        /soft_restart_to_auto - Restart the daemon to auto mode
+        """
+        self.update_existing_message(update, list_of_commands_with_descriptions)
+        return
+
     def on_internet_available(self, agent):
         if hasattr(self, "telegram_connected") and self.telegram_connected:
             return
@@ -687,7 +712,12 @@ class Telegram(plugins.Plugin):
                         command="send_backup",
                         description="Send the backup if it is available",
                     ),
+                    BotCommand(
+                        command="help",
+                        description="Get the list of available commands and their descriptions",
+                    )
                 ],
+                scope=telegram.BotCommandScopeAllPrivateChats(),
             )
             if self.updater is None:
                 self.updater = Updater(
