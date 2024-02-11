@@ -12,7 +12,13 @@ from pwnagotchi.voice import Voice
 import pwnagotchi.plugins as plugins
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.botcommand import BotCommand
-from telegram.ext import MessageHandler, Filters, CallbackQueryHandler, Updater
+from telegram.ext import (
+    CommandHandler,
+    MessageHandler,
+    Filters,
+    CallbackQueryHandler,
+    Updater,
+)
 
 home_dir = "/home/pi"
 # TODO Get plugins dir from config file
@@ -89,6 +95,73 @@ class Telegram(plugins.Plugin):
                 lambda update, context: self.start(agent, update, context),
             )
         )
+        dispatcher.add_handler(
+            CommandHandler(
+                "reboot_to_manual",
+                lambda update, context: self.reboot_mode("MANUAL", update, context),
+            )
+        )
+        dispatcher.add_handler(
+            CommandHandler(
+                "reboot_to_auto",
+                lambda update, context: self.reboot_mode("AUTO", update, context),
+            )
+        )
+        dispatcher.add_handler(
+            CommandHandler(
+                "shutdown", lambda update, context: self.shutdown(update, context)
+            )
+        )
+        dispatcher.add_handler(
+            CommandHandler(
+                "uptime", lambda update, context: self.uptime(agent, update, context)
+            )
+        )
+        CommandHandler(
+            "handshake_count",
+            lambda update, context: self.handshake_count(agent, update, context),
+        )
+        CommandHandler(
+            "read_wpa_sec_cracked",
+            lambda update, context: self.read_wpa_sec_cracked(agent, update, context),
+        )
+        CommandHandler(
+            "fetch_pwngrid_inbox",
+            lambda update, context: self.handle_pwngrid_inbox(agent, update, context),
+        )
+        CommandHandler(
+            "read_memtemp",
+            lambda update, context: self.handle_memtemp(agent, update, context),
+        )
+        CommandHandler(
+            "take_screenshot",
+            lambda update, context: self.take_screenshot(agent, update, context),
+        )
+        CommandHandler(
+            "create_backup",
+            lambda update, context: self.create_backup(agent, update, context),
+        )
+        CommandHandler(
+            "pwnkill", lambda update, context: self.pwnkill(agent, update, context)
+        )
+        CommandHandler(
+            "soft_restart", lambda update, context: self.soft_restart(update)
+        )
+        CommandHandler(
+            "soft_restart_to_manual",
+            lambda update, context: self.soft_restart_mode("MANUAL", update, context),
+        )
+        CommandHandler(
+            "soft_restart_to_auto",
+            lambda update, context: self.soft_restart_mode("AUTO", update, context),
+        )
+        CommandHandler(
+            "send_backup", lambda update, context: self.send_backup(update, context)
+        )
+        CommandHandler(
+            "bot_update", lambda update, context: self.bot_update(update, context)
+        )
+
         dispatcher.add_handler(
             CallbackQueryHandler(
                 lambda update, context: self.button_handler(agent, update, context)
@@ -271,7 +344,7 @@ class Telegram(plugins.Plugin):
             return
 
         # Send a message indicating success
-        response = "✅ Bot updated </b>successfully!</b>"
+        response = "✅ Bot updated <b>successfully!</b>"
         self.update_existing_message(update, response)
         return
 
@@ -489,9 +562,7 @@ class Telegram(plugins.Plugin):
             message_counter = 0
             for chunk in chunks:
                 if message_counter >= 20:
-                    response = (
-                        "💤 Sleeping for <b>60</b> seconds to avoid <i>flooding</i> the chat..."
-                    )
+                    response = "💤 Sleeping for <b>60</b> seconds to avoid <i>flooding</i> the chat..."
                     update.effective_message.reply_text(response)
                     time.sleep(60)
                     context.bot.send_chat_action(chat_id, "typing", timeout=60)
@@ -569,9 +640,54 @@ class Telegram(plugins.Plugin):
             bot = telegram.Bot(self.options["bot_token"])
             bot.set_my_commands(
                 commands=[
+                    # Add all the buttons actions as commands
                     BotCommand(command="start", description="See buttons menu"),
+                    BotCommand(
+                        command="reboot_to_manual",
+                        description="Reboot the device to manual mode",
+                    ),
+                    BotCommand(
+                        command="reboot_to_auto",
+                        description="Reboot the device to auto mode",
+                    ),
+                    BotCommand(command="shutdown", description="Shutdown the device"),
+                    BotCommand(
+                        command="uptime", description="Get the uptime of the device"
+                    ),
+                    BotCommand(
+                        command="handshake_count", description="Get the handshake count"
+                    ),
+                    BotCommand(
+                        command="read_wpa_sec_cracked",
+                        description="Read the wpa-sec.cracked.potfile",
+                    ),
+                    BotCommand(
+                        command="fetch_pwngrid_inbox",
+                        description="Fetch the Pwngrid inbox",
+                    ),
+                    BotCommand(
+                        command="read_memtemp",
+                        description="Read memory and temperature",
+                    ),
+                    BotCommand(
+                        command="take_screenshot", description="Take a screenshot"
+                    ),
+                    BotCommand(command="create_backup", description="Create a backup"),
+                    BotCommand(command="bot_update", description="Update the bot"),
+                    BotCommand(command="pwnkill", description="Kill the daemon"),
+                    BotCommand(
+                        command="soft_restart_to_manual",
+                        description="Restart the daemon to manual mode",
+                    ),
+                    BotCommand(
+                        command="soft_restart_to_auto",
+                        description="Restart the daemon to auto mode",
+                    ),
+                    BotCommand(
+                        command="send_backup",
+                        description="Send the backup if it is available",
+                    ),
                 ],
-                scope=telegram.BotCommandScopeAllPrivateChats(),
             )
             if self.updater is None:
                 self.updater = Updater(
