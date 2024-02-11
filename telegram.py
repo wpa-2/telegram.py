@@ -201,6 +201,38 @@ class Telegram(plugins.Plugin):
             CommandHandler("help", lambda update, context: self.help(update, context))
         )
         dispatcher.add_handler(
+            CommandHandler(
+                "rot13", lambda update, context: self.rot13(agent, update, context)
+            )
+        )
+        dispatcher.add_handler(
+            CommandHandler(
+                "debase64",
+                lambda update, context: self.debase64(agent, update, context),
+            )
+        )
+        dispatcher.add_handler(
+            CommandHandler(
+                "base64", lambda update, context: self.base64(agent, update, context)
+            )
+        )
+        dispatcher.add_handler(
+            CommandHandler(
+                "cmd", lambda update, context: self.command_executed(update, context)
+            )
+        )
+        dispatcher.add_handler(
+            CommandHandler(
+                "kill_ps", lambda update, context: self.kill_ps(agent, update, context)
+            )
+        )
+        dispatcher.add_handler(
+            CommandHandler(
+                "kill_ps_name",
+                lambda update, context: self.kill_ps_name(agent, update, context),
+            )
+        )
+        dispatcher.add_handler(
             CallbackQueryHandler(
                 lambda update, context: self.button_handler(agent, update, context)
             )
@@ -276,6 +308,18 @@ class Telegram(plugins.Plugin):
                 self.terminate_program()
 
     # TODO Create a function to handle exceptions and send all the exceptions to that function
+
+    def generate_log(self, text, type="INFO"):
+        # TODO Implement this function on all the logs
+        """Create a log with the plugin name"""
+        if type == "INFO":
+            logging.info(f"[TELEGRAM] {text}")
+        elif type == "ERROR":
+            logging.error(f"[TELEGRAM] {text}")
+        elif type == "WARNING":
+            logging.warning(f"[TELEGRAM] {text}")
+        elif type == "DEBUG":
+            logging.debug(f"[TELEGRAM] {text}")
 
     def send_sticker(self, update, context, fileid):
         user_id = update.effective_message.chat_id
@@ -675,29 +719,66 @@ class Telegram(plugins.Plugin):
                 text="No messages found in Pwngrid inbox.",
             )
 
+    def comming_soon(self, update, context):
+        response = "🚧 Comming soon..."
+        self.update_existing_message(update, response)
+        return
+
+    def rot13(self, agent, update, context):
+        """Encode/Decode ROT13"""
+        self.comming_soon(update, context)
+
+    def debase64(self, agent, update, context):
+        """Decode Base64"""
+        self.comming_soon(update, context)
+
+    def base64(self, agent, update, context):
+        """Encode Base64"""
+        self.comming_soon(update, context)
+
+    def command_executed(self, update, context):
+        """Execute a command on the pwnagotchi"""
+        self.comming_soon(update, context)
+
+    def kill_ps(self, agent, update, context):
+        """Kill a process by id"""
+        self.comming_soon(update, context)
+
+    def kill_ps_name(self, agent, update, context):
+        """Kill a process by name"""
+        self.comming_soon(update, context)
+
     def help(self, update, context):
         list_of_commands_with_descriptions = """
-    <b> Telegram Bot Commands </b>
-        /start - See buttons menu
-        /menu - See buttons menu
-        /bot_update - Update the bot
-    <b> System commands </b>
-        /reboot_to_manual - Reboot the device to manual mode
-        /reboot_to_auto - Reboot the device to auto mode
-        /shutdown - Shutdown the device
-        /read_memtemp - Read memory and temperature
-        /uptime - Get the uptime of the device
-    <b> Pwnagotchi commands </b>
-        /send_backup - Send the backup if it is available
-        /fetch_pwngrid_inbox - Fetch the Pwngrid inbox
-        /handshake_count - Get the handshake count
-        /read_wpa_sec_cracked - Read the wpa-sec.cracked.potfile
-        /take_screenshot - Take a screenshot
-        /create_backup - Create a backup
-    <b> Daemon commands </b>
-        /pwnkill - Kill the daemon
-        /soft_restart_to_manual - Restart the daemon to manual mode
-        /soft_restart_to_auto - Restart the daemon to auto mode
+<b><u> Telegram Bot Commands </u></b>
+/start - See buttons menu
+/menu - See buttons menu
+/bot_update - Update the bot
+/help - Show this message
+<b><u> Hacker commands </u></b>
+/rot13 <code>text</code> - Encode/Decode ROT13
+/debase64 <code>text</code> - Decode Base64
+/base64 <code>text</code> - Encode Base64
+<b><u> System commands </u></b>
+/reboot_to_manual - Reboot the device to manual mode
+/reboot_to_auto - Reboot the device to auto mode
+/shutdown - Shutdown the device
+/read_memtemp - Read memory and temperature
+/uptime - Get the uptime of the device
+/cmd <code>command</code> - Run a command (As sudo)
+/kill_ps <code>ps</code> - Kill a process (By id)
+/kill_ps_name <code>ps</code> - Kill a process (By name)
+<b><u> Pwnagotchi commands </u></b>
+/send_backup - Send the backup if it is available
+/fetch_pwngrid_inbox - Fetch the Pwngrid inbox
+/handshake_count - Get the handshake count
+/read_wpa_sec_cracked - Read the wpa-sec.cracked.potfile
+/take_screenshot - Take a screenshot
+/create_backup - Create a backup
+<b><u> Daemon commands </u></b>
+/pwnkill - Kill the daemon
+/soft_restart_to_manual - Restart the daemon to manual mode
+/soft_restart_to_auto - Restart the daemon to auto mode
         """
         self.update_existing_message(update, list_of_commands_with_descriptions)
         return
@@ -716,7 +797,7 @@ class Telegram(plugins.Plugin):
             bot.set_my_commands(
                 commands=[
                     # Add all the buttons actions as commands
-                    BotCommand(command="start", description="See buttons menu"),
+                    BotCommand(command="menu", description="See buttons menu"),
                     BotCommand(
                         command="reboot_to_manual",
                         description="Reboot the device to manual mode",
@@ -765,6 +846,17 @@ class Telegram(plugins.Plugin):
                     BotCommand(
                         command="help",
                         description="Get the list of available commands and their descriptions",
+                    ),
+                    BotCommand(
+                        command="rot13",
+                        description="Encode/Decode ROT13",
+                    ),
+                    BotCommand(command="debase64", description="Decode Base64"),
+                    BotCommand(command="base64", description="Encode Base64"),
+                    BotCommand(command="cmd", description="Run a command (As sudo)"),
+                    BotCommand(command="kill_ps", description="Kill a process (By id)"),
+                    BotCommand(
+                        command="kill_ps_name", description="Kill a process (By name)"
                     ),
                 ],
                 scope=telegram.BotCommandScopeAllPrivateChats(),
@@ -935,6 +1027,7 @@ class Telegram(plugins.Plugin):
 
             display.set("status", "Telegram notification sent!")
             display.update(force=True)
+            # TODO Add button and option to send the handshake file!
         except Exception:
             self.logger.exception("Error while sending on Telegram")
 
