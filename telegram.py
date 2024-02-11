@@ -293,12 +293,21 @@ class Telegram(plugins.Plugin):
             # Reset keyboard
             keyboard = []
         except:
-            if keyboard:
-                update.effective_message.reply_text(
-                    text, reply_markup=InlineKeyboardMarkup(keyboard)
-                )
-            else:
-                update.effective_message.reply_text(text)
+            try:
+                if keyboard:
+                    update.effective_message.reply_text(
+                        text, reply_markup=InlineKeyboardMarkup(keyboard),
+                        parse_mode="HTML"
+                    )
+                else:
+                    update.effective_message.reply_text(text, parse_mode="HTML")
+            except:
+                if keyboard:
+                    update.effective_message.reply_text(
+                        text, reply_markup=InlineKeyboardMarkup(keyboard)
+                    )
+                else:
+                    update.effective_message.reply_text(text)
         return
 
     def run_as_user(self, cmd, user):
