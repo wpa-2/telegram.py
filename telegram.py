@@ -93,7 +93,9 @@ class Telegram(plugins.Plugin):
             MessageHandler(
                 Filters.regex("^/start$"),
                 lambda update, context: self.start(agent, update, context),
-            ),
+            )
+        )
+        dispatcher.add_handler(
             CommandHandler(
                 "menu",
                 lambda update, context: self.start(agent, update, context),
@@ -300,8 +302,9 @@ class Telegram(plugins.Plugin):
             try:
                 if keyboard:
                     update.effective_message.reply_text(
-                        text, reply_markup=InlineKeyboardMarkup(keyboard),
-                        parse_mode="HTML"
+                        text,
+                        reply_markup=InlineKeyboardMarkup(keyboard),
+                        parse_mode="HTML",
                     )
                 else:
                     update.effective_message.reply_text(text, parse_mode="HTML")
@@ -785,7 +788,7 @@ class Telegram(plugins.Plugin):
                 )
                 reply_markup = InlineKeyboardMarkup(main_menu)
                 bot.send_message(
-                    chat_id=self.options["chat_id"],
+                    chat_id=int(self.options["chat_id"]),
                     text=response,
                     reply_markup=reply_markup,
                     parse_mode="HTML",
@@ -808,7 +811,7 @@ class Telegram(plugins.Plugin):
                 )
                 if self.options["send_message"] is True:
                     bot.sendMessage(
-                        chat_id=self.options["chat_id"],
+                        chat_id=int(self.options["chat_id"]),
                         text=message,
                         disable_web_page_preview=True,
                     )
@@ -821,7 +824,7 @@ class Telegram(plugins.Plugin):
 
                 if self.options["send_picture"] is True:
                     bot.sendPhoto(
-                        chat_id=self.options["chat_id"], photo=open(picture, "rb")
+                        chat_id=int(self.options["chat_id"]), photo=open(picture, "rb")
                     )
                     self.logger.info("telegram: picture sent")
 
@@ -924,7 +927,7 @@ class Telegram(plugins.Plugin):
             message = f"🤝 New handshake captured: {access_point['hostname']} - {client_station['mac']}"
             if self.options["send_message"] is True:
                 bot.sendMessage(
-                    chat_id=self.options["chat_id"],
+                    chat_id=int(self.options["chat_id"]),
                     text=message,
                     disable_web_page_preview=True,
                 )
