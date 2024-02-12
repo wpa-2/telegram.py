@@ -772,7 +772,18 @@ class Telegram(plugins.Plugin):
 
     def rot13(self, agent, update, context):
         """Encode/Decode ROT13"""
-        self.comming_soon(update, context)
+        import codecs
+        args = context.args
+
+        # Check if an argument was provided after the /start command
+        if args:
+            arg = " ".join(args[:])
+            rot13_text = codecs.encode(arg, "rot_13")
+            response = f"🔠 ROT13: <code>{rot13_text}</code>"
+        else:
+            response = "⛔ No text provided to encode/decode with ROT13.\nUsage: /rot13 <code>text</code>"
+        self.update_existing_message(update, response)
+        return
 
     def debase64(self, agent, update, context):
         """Decode Base64"""
