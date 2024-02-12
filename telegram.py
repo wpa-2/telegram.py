@@ -182,7 +182,8 @@ class Telegram(plugins.Plugin):
         )
         dispatcher.add_handler(
             CommandHandler(
-                "soft_restart", lambda update, context: self.soft_restart(update, context)
+                "soft_restart",
+                lambda update, context: self.soft_restart(update, context),
             )
         )
         dispatcher.add_handler(
@@ -201,7 +202,8 @@ class Telegram(plugins.Plugin):
         )
         dispatcher.add_handler(
             CommandHandler(
-                "send_backup", lambda update, context: self.send_backup(agent, update, context)
+                "send_backup",
+                lambda update, context: self.send_backup(agent, update, context),
             )
         )
         dispatcher.add_handler(
@@ -364,14 +366,39 @@ class Telegram(plugins.Plugin):
         list_of_messages.append(text)
         return list_of_messages
 
-    def send_new_message(self, update, context, text:str, keyboard:InlineKeyboardMarkup=InlineKeyboardMarkup([[]])):
+    def send_new_message(
+        self,
+        update,
+        context,
+        text: str,
+        keyboard: InlineKeyboardMarkup = InlineKeyboardMarkup([[]]),
+    ):
         try:
             reply_kwargs = {"parse_mode": "HTML"}
+            keyboard = self.add_open_menu_button(keyboard)
             if keyboard:
                 reply_kwargs["reply_markup"] = keyboard
             update.effective_message.reply_text(text, **reply_kwargs)
-        except Exception as e:
-            self.handle_exception(update, context, e)
+        except Exception:
+            try:
+                update.effective_message.reply_text(text)
+            except Exception as e:
+                self.handle_exception(update, context, e)
+
+    def add_lossing_html_tags(self, text):
+        if "<code>" in text and "</code>" not in text:
+            text += "</code>"
+        if "<b>" in text and "</b>" not in text:
+            text += "</b>"
+        if "<i>" in text and "</i>" not in text:
+            text += "</i>"
+        if "</code>" in text and "<code>" not in text:
+            text = "<code>" + text
+        if "</b>" in text and "<b>" not in text:
+            text = "<b>" + text
+        if "</i>" in text and "<i>" not in text:
+            text = "<i>" + text
+        return text
 
     def update_existing_message(self, update, context, text, keyboard=[]):
         if len(text) > max_length_message:
@@ -380,8 +407,9 @@ class Telegram(plugins.Plugin):
             self.generate_log(f"List of messages: {list_of_messages}", "DEBUG")
             self.send_long_messages(list_of_messages, update, context)
         else:
+            text = self.add_lossing_html_tags(text)
             self.generate_log(f"Sending message: {text}", "DEBUG")
-            keyboard = self.add_go_back_button(keyboard)
+            keyboard = self.add_open_menu_button(keyboard)
             self.send_or_edit_message(update, context, text, keyboard)
 
     def send_long_messages(self, list_of_messages, update, context):
@@ -401,7 +429,7 @@ class Telegram(plugins.Plugin):
         self.send_new_message(update, context, response)
         sleep(60)
 
-    def add_go_back_button(self, keyboard):
+    def add_open_menu_button(self, keyboard):
         go_back_button = [
             InlineKeyboardButton("📲 Open Menu", callback_data="start"),
         ]
@@ -418,8 +446,7 @@ class Telegram(plugins.Plugin):
                 reply_markup=InlineKeyboardMarkup(keyboard),
                 parse_mode="HTML",
             )
-        except Exception as e:
-            # self.handle_exception(update, None, e)
+        except Exception:
             self.send_new_message(update, context, text, InlineKeyboardMarkup(keyboard))
 
     def run_as_user(self, cmd, user):
