@@ -24,7 +24,7 @@ from telegram.ext import (
 )
 
 home_dir = "/home/pi"
-max_length_message = 4096
+max_length_message = 4090
 max_messages_per_minute = 20
 
 main_menu = [
