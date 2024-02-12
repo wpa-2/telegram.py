@@ -22,7 +22,7 @@ from telegram.ext import (
 )
 
 home_dir = "/home/pi"
-# TODO Get plugins dir from config file
+# TODO: Get plugins dir from config file
 plugins_dir = "/usr/local/share/pwnagotchi/custom-plugins"
 
 main_menu = [
@@ -315,10 +315,10 @@ class Telegram(plugins.Plugin):
             if self.completed_tasks == self.num_tasks:
                 self.terminate_program()
 
-    # TODO Create a function to handle exceptions and send all the exceptions to that function
+    # TODO: Create a function to handle exceptions and send all the exceptions to that function
 
     def generate_log(self, text, type="INFO"):
-        # TODO Implement this function on all the logs
+        # TODO: Implement this function on all the logs
         """Create a log with the plugin name"""
         if type == "INFO":
             logging.info(f"[TELEGRAM] {text}")
@@ -617,7 +617,7 @@ class Telegram(plugins.Plugin):
             response = "⏰ Sending <code>pwnkill</code> to pwnagotchi..."
             self.send_sticker(update, context, random.choice(stickers_kill_daemon))
             update.effective_message.reply_text(response, parse_mode="HTML")
-            # TODO Maybe it's better to use systemctl stop pwnagotchi? To turn it off gracefully?
+            # TODO: Maybe it's better to use systemctl stop pwnagotchi? To turn it off gracefully?
             subprocess.run(["sudo", "killall", "-USR1", "pwnagotchi"])
         except subprocess.CalledProcessError as e:
             response = f"⛔ Error executing pwnkill command: <code>{e}</code>"
@@ -646,7 +646,7 @@ class Telegram(plugins.Plugin):
             return [f"⛔ Error reading file: {e}"]
 
     def read_wpa_sec_cracked(self, agent, update, context):
-        # TODO Read every .potfile available
+        # TODO: Read every .potfile available
         file_path = "/root/handshakes/wpa-sec.cracked.potfile"
         chunks = self.format_handshake_pot_files(file_path)
         if not chunks or not any(chunk.strip() for chunk in chunks):
@@ -1044,7 +1044,7 @@ class Telegram(plugins.Plugin):
 
             display.set("status", "Telegram notification sent!")
             display.update(force=True)
-            # TODO Add button and option to send the handshake file!
+            # TODO: Add button and option to send the handshake file!
         except Exception:
             self.logger.exception("Error while sending on Telegram")
 
