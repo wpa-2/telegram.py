@@ -10,6 +10,7 @@ from time import sleep
 from pwnagotchi import fs
 from pwnagotchi.ui import view
 from pwnagotchi.voice import Voice
+from pwnagotchi.utils import led
 import pwnagotchi.plugins as plugins
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.botcommand import BotCommand
@@ -240,6 +241,22 @@ class Telegram(plugins.Plugin):
                 lambda update, context: self.kill_ps_name(agent, update, context),
             )
         )
+
+        dispatcher.add_handler(
+            CommandHandler(
+                "turn_led_off",
+                lambda update, context: self.change_led(agent, update, context, on=False),
+            )
+        )
+
+        dispatcher.add_handler(
+            CommandHandler(
+                "turn_led_on",
+                lambda update, context: self.change_led(agent, update, context, on=True),
+            )
+        )
+
+
         dispatcher.add_handler(
             CallbackQueryHandler(
                 lambda update, context: self.button_handler(agent, update, context)
@@ -333,6 +350,9 @@ class Telegram(plugins.Plugin):
             logging.warning(f"[TELEGRAM] {text}")
         elif type == "DEBUG":
             logging.debug(f"[TELEGRAM] {text}")
+
+    def change_led(self, agent, update, context, on=True):
+        led(on)
 
     def send_sticker(self, update, context, fileid):
         user_id = update.effective_message.chat_id
