@@ -88,10 +88,10 @@ class Telegram(plugins.Plugin):
         self.start_menu_sent = False
         # Read toml file
         try:
-            with open('/etc/pwnagotchi/config.toml', 'r') as f:
+            with open("/etc/pwnagotchi/config.toml", "r") as f:
                 config = toml.load(f)
-                self.screen_rotation = int(config['ui']['display']['rotation'])
-                self.plugins_dir = str(config['main']['custom']['plugins'])
+                self.screen_rotation = int(config["ui"]["display"]["rotation"])
+                self.plugins_dir = str(config["main"]["custom"]["plugins"])
         except:
             self.screen_rotation = 0
             self.plugins_dir = "/usr/local/share/pwnagotchi/custom-plugins"
@@ -248,17 +248,20 @@ class Telegram(plugins.Plugin):
         dispatcher.add_handler(
             CommandHandler(
                 "turn_led_off",
-                lambda update, context: self.change_led(agent, update, context, on=False),
+                lambda update, context: self.change_led(
+                    agent, update, context, on=False
+                ),
             )
         )
 
         dispatcher.add_handler(
             CommandHandler(
                 "turn_led_on",
-                lambda update, context: self.change_led(agent, update, context, on=True),
+                lambda update, context: self.change_led(
+                    agent, update, context, on=True
+                ),
             )
         )
-
 
         dispatcher.add_handler(
             CallbackQueryHandler(
@@ -478,7 +481,9 @@ class Telegram(plugins.Plugin):
                     check=True,
                 )
                 # Add the repository as a safe directory as the pi user
-                self.generate_log("Adding telegram-bot repository as safe for pi...", "DEBUG")
+                self.generate_log(
+                    "Adding telegram-bot repository as safe for pi...", "DEBUG"
+                )
                 self.run_as_user(
                     "git config --global --add safe.directory /home/pi/telegram-bot",
                     "pi",
@@ -486,14 +491,21 @@ class Telegram(plugins.Plugin):
 
                 # Create a symbolic link so when the bot is updated, the new version is used
                 subprocess.run(
-                    ["ln", "-sf", "/home/pi/telegram-bot/telegram.py", self.plugins_dir],
+                    [
+                        "ln",
+                        "-sf",
+                        "/home/pi/telegram-bot/telegram.py",
+                        self.plugins_dir,
+                    ],
                     check=True,
                 )
             # Change directory to telegram-bot
             os.chdir("telegram-bot")
 
             # Pull the latest changes from the repository
-            self.generate_log("Pulling latest changes from telegram-bot repository...", "INFO")
+            self.generate_log(
+                "Pulling latest changes from telegram-bot repository...", "INFO"
+            )
             subprocess.run(["git", "pull"], check=True)
 
         except subprocess.CalledProcessError as e:
@@ -535,7 +547,6 @@ class Telegram(plugins.Plugin):
             self.update_existing_message(update, response)
         except Exception as e:
             self.handle_exception(update, context, e)
-
 
     def reboot(self, agent, update, context):
         keyboard = [
@@ -701,7 +712,6 @@ class Telegram(plugins.Plugin):
             return [f"⛔ Error reading file: {e}"]
 
     def read_potfiles_cracked(self, agent, update, context):
-
         potfiles_dir = "/root/handshakes"
         potfiles_list = os.listdir(potfiles_dir)
         potfiles_list = [file for file in potfiles_list if file.endswith(".potfile")]
@@ -720,7 +730,9 @@ class Telegram(plugins.Plugin):
                     text="The cracked potfile is empty.", update=update
                 )
             else:
-                self.send_sticker(update, context, random.choice(stickers_handshake_or_wpa))
+                self.send_sticker(
+                    update, context, random.choice(stickers_handshake_or_wpa)
+                )
                 chat_id = update.effective_user["id"]
                 context.bot.send_chat_action(chat_id, "typing")
                 import time
@@ -805,7 +817,6 @@ class Telegram(plugins.Plugin):
         else:
             return None
 
-
     def rot13(self, agent, update, context):
         """Encode/Decode ROT13"""
         try:
@@ -848,6 +859,17 @@ class Telegram(plugins.Plugin):
             self.handle_exception(update, context, e)
         return
 
+    def sanitize_text_to_send(self, text):
+        """Sanitize some characters so we don't break the html format"""
+        return (
+            text.replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("&", "&amp;")
+            .replace("_", "\_")
+            .replace("*", "\*")
+            .replace("`", "\`")
+        )
+
     def command_executed(self, update, context):
         """Execute a command on the pwnagotchi"""
         try:
@@ -857,7 +879,7 @@ class Telegram(plugins.Plugin):
                 context.bot.send_chat_action(chat_id, "typing")
                 # Execute the  args provided and send the output to the chat
                 output = subprocess.check_output(args, shell=True).decode("utf-8")
-                response = f"🔠 ~>$: <code>{args}</code>\n\n📜 ~>$: <code>{output}</code>"
+                response = f"🔠 ~>$: <code>{args}</code>\n\n📜 ~>$: <code>{self.sanitize_text_to_send(output)}</code>"
             else:
                 response = "⛔ No command provided to execute.\nUsage: /cmd <code>command</code>"
             self.update_existing_message(update, response)
@@ -1024,8 +1046,12 @@ class Telegram(plugins.Plugin):
                     BotCommand(
                         command="kill_ps_name", description="Kill a process (By name)"
                     ),
-                    BotCommand(command="turn_led_on", description="Turn the ACT led on"),
-                    BotCommand(command="turn_led_off", description="Turn the ACT led off"),
+                    BotCommand(
+                        command="turn_led_on", description="Turn the ACT led on"
+                    ),
+                    BotCommand(
+                        command="turn_led_off", description="Turn the ACT led off"
+                    ),
                 ],
                 scope=telegram.BotCommandScopeAllPrivateChats(),
             )
