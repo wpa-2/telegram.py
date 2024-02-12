@@ -913,6 +913,8 @@ class Telegram(plugins.Plugin):
                     BotCommand(
                         command="kill_ps_name", description="Kill a process (By name)"
                     ),
+                    BotCommand(command="turn_led_on", description="Turn the ACT led on"),
+                    BotCommand(command="turn_led_off", description="Turn the ACT led off"),
                 ],
                 scope=telegram.BotCommandScopeAllPrivateChats(),
             )
