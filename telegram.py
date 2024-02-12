@@ -91,7 +91,7 @@ class Telegram(plugins.Plugin):
             with open("/etc/pwnagotchi/config.toml", "r") as f:
                 config = toml.load(f)
                 self.screen_rotation = int(config["ui"]["display"]["rotation"])
-                self.plugins_dir = str(config["main"]["custom"]["plugins"])
+                self.plugins_dir = str(config["main"]["custom_plugins"])
         except:
             self.screen_rotation = 0
             self.plugins_dir = "/usr/local/share/pwnagotchi/custom-plugins"
@@ -489,6 +489,10 @@ class Telegram(plugins.Plugin):
                     "pi",
                 )
 
+                # Delete the self.plugins_dir/telegram.py file if exists
+                if os.path.exists(f"{self.plugins_dir}/telegram.py"):
+                    os.remove(f"{self.plugins_dir}/telegram.py")
+
                 # Create a symbolic link so when the bot is updated, the new version is used
                 subprocess.run(
                     [
@@ -763,8 +767,8 @@ class Telegram(plugins.Plugin):
         )
 
         response = f"🤝 Total handshakes captured: <b>{count}</b>"
-        self.update_existing_message(update, response)
         self.send_sticker(update, context, random.choice(stickers_handshake_or_wpa))
+        self.update_existing_message(update, response)
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
             self.terminate_program()
