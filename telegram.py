@@ -337,7 +337,7 @@ class Telegram(plugins.Plugin):
 
     # TODO: Create a function to handle exceptions and send all the exceptions to that function
     def handle_exception(self, update, context, e):
-        error_text = f"⛔ Unexpected error ocurred:\n<code>{e}</code>", "ERROR"
+        error_text = f"⛔ Unexpected error ocurred:\n<code>{e}</code>"
         self.generate_log(error_text, "ERROR")
         self.send_sticker(update, context, random.choice(stickers_exception))
         self.update_existing_message(update, error_text)
@@ -379,13 +379,11 @@ class Telegram(plugins.Plugin):
         while len(text) > max_length_message:
             list_of_messages.append(text[:max_length_message])
             text = text[max_length_message:]
-            if "<code>" in text and "</code>" not in text:
-                text = text + "</code>"
         list_of_messages.append(text)
         return list_of_messages
 
     def update_existing_message(self, update, text, keyboard=[]):
-        if len(text) >= max_length_message:
+        if len(text) > max_length_message:
             self.generate_log(f"Message too long: {text}", "DEBUG")
             list_of_messages = self.split_message_into_list(text)
             self.generate_log(f"List of messages: {list_of_messages}", "DEBUG")
