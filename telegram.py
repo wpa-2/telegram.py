@@ -24,7 +24,7 @@ from telegram.ext import (
 )
 
 home_dir = "/home/pi"
-max_length_message = 4090
+max_length_message = 4096/2
 max_messages_per_minute = 20
 
 main_menu = [
@@ -379,19 +379,21 @@ class Telegram(plugins.Plugin):
         while len(text) > max_length_message:
             list_of_messages.append(text[:max_length_message])
             text = text[max_length_message:]
+            if "<code>" in text and "</code>" not in text:
+                text = text + "</code>"
+        list_of_messages.append(text)
         return list_of_messages
 
     def update_existing_message(self, update, text, keyboard=[]):
-        # TODO: Move log to debug
         if len(text) >= max_length_message:
-            logging.info(f"Message too long: {text}")
+            self.generate_log(f"Message too long: {text}", "DEBUG")
             list_of_messages = self.split_message_into_list(text)
-            logging.info(f"List of messages: {list_of_messages}")
+            self.generate_log(f"List of messages: {list_of_messages}", "DEBUG")
             counter = 0
-            logging.info(f"Sending message: {text}")
             for message in list_of_messages:
+                self.generate_log(f"Sending message: {message}", "INFO")
                 counter += 1
-                if counter >= max_messages_per_minute:
+                if counter >= max_messages_per_minute - 1:
                     response = "💤 Sleeping for <b>60</b> seconds to avoid <i>flooding</i> the chat..."
                     update.effective_message.reply_text(response)
                     counter = 0
@@ -853,6 +855,8 @@ class Telegram(plugins.Plugin):
         try:
             args = self.join_context_args(context)
             if args:
+                chat_id = update.effective_user["id"]
+                context.bot.send_chat_action(chat_id, "typing")
                 # Execute the  args provided and send the output to the chat
                 output = subprocess.check_output(args, shell=True).decode("utf-8")
                 response = f"🔠 ~>$: <code>{args}</code>\n\n📜 ~>$: <code>{output}</code>"
