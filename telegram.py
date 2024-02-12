@@ -5,6 +5,7 @@ import telegram
 import subprocess
 import pwnagotchi
 import random
+import toml
 from time import sleep
 from pwnagotchi import fs
 from pwnagotchi.ui import view
@@ -21,8 +22,6 @@ from telegram.ext import (
 )
 
 home_dir = "/home/pi"
-# TODO Get plugins dir from config file
-plugins_dir = "/usr/local/share/pwnagotchi/custom-plugins"
 
 main_menu = [
     [
@@ -33,7 +32,7 @@ main_menu = [
     [
         InlineKeyboardButton("🤝 Handshake Count", callback_data="handshake_count"),
         InlineKeyboardButton(
-            "🔓 Read WPA-Sec Cracked", callback_data="read_wpa_sec_cracked"
+            "🔓 Read Potfiles Cracked", callback_data="read_potfiles_cracked"
         ),
         InlineKeyboardButton(
             "📬 Fetch Pwngrid Inbox", callback_data="fetch_pwngrid_inbox"
@@ -83,6 +82,15 @@ class Telegram(plugins.Plugin):
         self.num_tasks = 8  # Increased for the new pwnkill task
         self.updater = None
         self.start_menu_sent = False
+        # Read toml file
+        try:
+            with open('/etc/pwnagotchi/config.toml', 'r') as f:
+                config = toml.load(f)
+                self.screen_rotation = int(config['ui']['display']['rotation'])
+                self.plugins_dir = str(config['main']['custom']['plugins'])
+        except:
+            self.screen_rotation = 0
+            self.plugins_dir = "/usr/local/share/pwnagotchi/custom-plugins"
 
     def on_agent(self, agent):
         if "auto_start" in self.options and self.options["auto_start"]:
@@ -131,8 +139,8 @@ class Telegram(plugins.Plugin):
         )
         dispatcher.add_handler(
             CommandHandler(
-                "read_wpa_sec_cracked",
-                lambda update, context: self.read_wpa_sec_cracked(
+                "read_potfiles_cracked",
+                lambda update, context: self.read_potfiles_cracked(
                     agent, update, context
                 ),
             )
@@ -276,8 +284,8 @@ class Telegram(plugins.Plugin):
                 self.shutdown(update, context)
             elif query.data == "uptime":
                 self.uptime(agent, update, context)
-            elif query.data == "read_wpa_sec_cracked":
-                self.read_wpa_sec_cracked(agent, update, context)
+            elif query.data == "read_potfiles_cracked":
+                self.read_potfiles_cracked(agent, update, context)
             elif query.data == "handshake_count":
                 self.handshake_count(agent, update, context)
             elif query.data == "fetch_pwngrid_inbox":
@@ -307,10 +315,15 @@ class Telegram(plugins.Plugin):
             if self.completed_tasks == self.num_tasks:
                 self.terminate_program()
 
-    # TODO Create a function to handle exceptions and send all the exceptions to that function
+    # TODO: Create a function to handle exceptions and send all the exceptions to that function
+    def handle_exception(self, update, context, e):
+        error_text = f"⛔ Unexpected error ocurred:\n<code>{e}</code>", "ERROR"
+        self.generate_log(error_text, "ERROR")
+        self.send_sticker(update, context, random.choice(stickers_exception))
+        self.update_existing_message(update, error_text)
 
     def generate_log(self, text, type="INFO"):
-        # TODO Implement this function on all the logs
+        # TODO: Implement this function on all the logs
         """Create a log with the plugin name"""
         if type == "INFO":
             logging.info(f"[TELEGRAM] {text}")
@@ -369,7 +382,7 @@ class Telegram(plugins.Plugin):
         return
 
     def bot_update(self, update, context):
-        logging.info("[TELEGRAM] Updating bot...")
+        self.generate_log("Updating bot...", "INFO")
         response = "🆙 Updating bot..."
         self.update_existing_message(update, response)
         chat_id = update.effective_user["id"]
@@ -381,7 +394,7 @@ class Telegram(plugins.Plugin):
             # Check if the telegram-bot folder exists
             if not os.path.exists("telegram-bot"):
                 # Clone the telegram-bot repository if it doesn't exist
-                logging.debug("[TELEGRAM] Cloning telegram-bot repository...")
+                self.generate_log("Cloning telegram-bot repository...", "INFO")
                 subprocess.run(
                     [
                         "git",
@@ -393,7 +406,7 @@ class Telegram(plugins.Plugin):
                 )
 
                 # Add the repository as a safe directory as root
-                logging.debug("[TELEGRAM] Adding telegram-bot repository as safe...")
+                self.generate_log("Adding telegram-bot repository as safe...", "DEBUG")
                 subprocess.run(
                     [
                         "git",
@@ -406,9 +419,7 @@ class Telegram(plugins.Plugin):
                     check=True,
                 )
                 # Add the repository as a safe directory as the pi user
-                logging.debug(
-                    "[TELEGRAM] Adding telegram-bot repository as safe for pi..."
-                )
+                self.generate_log("Adding telegram-bot repository as safe for pi...", "DEBUG")
                 self.run_as_user(
                     "git config --global --add safe.directory /home/pi/telegram-bot",
                     "pi",
@@ -416,16 +427,14 @@ class Telegram(plugins.Plugin):
 
                 # Create a symbolic link so when the bot is updated, the new version is used
                 subprocess.run(
-                    ["ln", "-sf", "/home/pi/telegram-bot/telegram.py", plugins_dir],
+                    ["ln", "-sf", "/home/pi/telegram-bot/telegram.py", self.plugins_dir],
                     check=True,
                 )
             # Change directory to telegram-bot
             os.chdir("telegram-bot")
 
             # Pull the latest changes from the repository
-            logging.info(
-                "[TELEGRAM] Pulling latest changes from telegram-bot repository..."
-            )
+            self.generate_log("Pulling latest changes from telegram-bot repository...", "INFO")
             subprocess.run(["git", "pull"], check=True)
 
         except subprocess.CalledProcessError as e:
@@ -453,7 +462,7 @@ class Telegram(plugins.Plugin):
             # Capture the screen rotation value and rotate the image (x degrees) before saving
             # If there is no rotation value, the default value is 0
 
-            rotation_degree = self.options.get("rotation", 0)
+            rotation_degree = self.screen_rotation
 
             rotated_screenshot = screenshot.rotate(rotation_degree)
 
@@ -464,11 +473,10 @@ class Telegram(plugins.Plugin):
                 context.bot.send_photo(chat_id=update.effective_chat.id, photo=photo)
 
             response = "✅ Screenshot taken and sent!"
+            self.update_existing_message(update, response)
         except Exception as e:
-            self.send_sticker(update, context, random.choice(stickers_exception))
-            response = f"⛔ Error taking screenshot: <code>{e}</code>"
+            self.handle_exception(update, context, e)
 
-        update.effective_message.reply_text(response, parse_mode="HTML")
 
     def reboot(self, agent, update, context):
         keyboard = [
@@ -495,8 +503,7 @@ class Telegram(plugins.Plugin):
 
         try:
             response = reboot_text
-            logging.warning("[TELEGRAM]", reboot_text)
-
+            self.generate_log(reboot_text, "WARNING")
             self.update_existing_message(update, response)
 
             if view.ROOT:
@@ -509,23 +516,21 @@ class Telegram(plugins.Plugin):
             elif mode == "MANU":
                 subprocess.run(["sudo", "touch", "/root/.pwnagotchi-manual"])
 
-            logging.warning("[TELEGRAM] syncing...")
+            self.generate_log("syncing...", "WARNING")
 
             for m in fs.mounts:
                 m.sync()
 
+            self.generate_log("rebooting...", "INFO")
             subprocess.run(["sudo", "sync"])
             subprocess.run(["sudo", "reboot"])
         except Exception as e:
-            self.send_sticker(update, context, random.choice(stickers_exception))
-            logging.error(f"[TELEGRAM] Error rebooting: {e}")
-            response = f"⛔ Error rebooting: <b>{e}</b>"
-            update.effective_message.reply_text(response)
+            self.handle_exception(update, context, e)
 
     def shutdown(self, update, context):
         response = "📴 Shutting down <b>now</b>..."
         self.update_existing_message(update, response)
-        logging.warning("[TELEGRAM] shutting down ...")
+        self.generate_log("shutting down...", "WARNING")
 
         try:
             if view.ROOT:
@@ -533,7 +538,7 @@ class Telegram(plugins.Plugin):
                 # Give it some time to refresh the ui
                 sleep(10)
 
-            logging.warning("[TELEGRAM] syncing...")
+            self.generate_log("syncing...", "WARNING")
 
             for m in fs.mounts:
                 m.sync()
@@ -541,10 +546,7 @@ class Telegram(plugins.Plugin):
             subprocess.run(["sudo", "sync"])
             subprocess.run(["sudo", "halt"])
         except Exception as e:
-            self.send_sticker(update, context, random.choice(stickers_exception))
-            logging.error(f"[TELEGRAM] Error shutting down: {e}")
-            response = f"⛔ Error shutting down: <code>{e}</code>"
-            update.effective_message.reply_text(response)
+            self.handle_exception(update, context, e)
         return
 
     def soft_restart(self, update):
@@ -564,7 +566,7 @@ class Telegram(plugins.Plugin):
         return
 
     def soft_restart_mode(self, mode, update, context):
-        logging.warning("[TELEGRAM] restarting in %s mode ...", mode)
+        self.generate_log(f"restarting in {mode} mode ...")
         response = f"🔃 Restarting in <b>{mode}</b> mode..."
         self.update_existing_message(update, response)
 
@@ -580,10 +582,7 @@ class Telegram(plugins.Plugin):
 
             subprocess.run(["sudo", "systemctl", "restart", "pwnagotchi"])
         except Exception as e:
-            self.send_sticker(update, context, random.choice(stickers_exception))
-            logging.error(f"[TELEGRAM] Error restarting: {e}")
-            response = f"⛔ Error restarting: <code>{e}</code>"
-            update.effective_message.reply_text(response, parse_mode="HTML")
+            self.handle_exception(update, context, e)
         return
 
     def uptime(self, agent, update, context):
@@ -609,7 +608,7 @@ class Telegram(plugins.Plugin):
             response = "⏰ Sending <code>pwnkill</code> to pwnagotchi..."
             self.send_sticker(update, context, random.choice(stickers_kill_daemon))
             update.effective_message.reply_text(response, parse_mode="HTML")
-            # TODO Maybe it's better to use systemctl stop pwnagotchi? To turn it off gracefully?
+            # TODO: Maybe it's better to use systemctl stop pwnagotchi? To turn it off gracefully?
             subprocess.run(["sudo", "killall", "-USR1", "pwnagotchi"])
         except subprocess.CalledProcessError as e:
             response = f"⛔ Error executing pwnkill command: <code>{e}</code>"
@@ -620,47 +619,63 @@ class Telegram(plugins.Plugin):
             messages_list = []
             message = ""
 
-            with open(file_path, "r") as file:
-                content = file.readlines()
-                for line in content:
-                    pwned = line.split(":")[2:]
-                    if len(message + line) > 4096:
-                        messages_list.append(message)
-                        message = ""
-                    # This code formatting allow us to copy the code block with one tap
-                    # SSID:password
-                    message += ":<code>".join(pwned)
-                    message = message + "</code>"
-                messages_list.append(message)
+            try:
+                with open(file_path, "r") as file:
+                    content = file.readlines()
+                    for line in content:
+                        pwned = line.split(":")[2:]
+                        if len(message + line) > 4096:
+                            messages_list.append(message)
+                            message = ""
+                        # This code formatting allow us to copy the code block with one tap
+                        # SSID:password
+                        message += ":<code>".join(pwned)
+                        message = message + "</code>"
+                    messages_list.append(message)
+            except FileNotFoundError:
+                return [f"⛔ The {file_path} does not exists."]
+            except:
+                return ["⛔ Unexpected error reading file."]
             return messages_list
 
         except subprocess.CalledProcessError as e:
             return [f"⛔ Error reading file: {e}"]
 
-    def read_wpa_sec_cracked(self, agent, update, context):
-        # TODO Read every .potfile available
-        file_path = "/root/handshakes/wpa-sec.cracked.potfile"
-        chunks = self.format_handshake_pot_files(file_path)
-        if not chunks or not any(chunk.strip() for chunk in chunks):
-            self.update_existing_message(
-                text="The wpa-sec.cracked.potfile is empty.", update=update
-            )
-        else:
-            self.send_sticker(update, context, random.choice(stickers_handshake_or_wpa))
-            chat_id = update.effective_user["id"]
-            context.bot.send_chat_action(chat_id, "typing")
-            import time
+    def read_potfiles_cracked(self, agent, update, context):
 
-            message_counter = 0
-            for chunk in chunks:
-                if message_counter >= 20:
-                    response = "💤 Sleeping for <b>60</b> seconds to avoid <i>flooding</i> the chat..."
-                    update.effective_message.reply_text(response)
-                    time.sleep(60)
-                    context.bot.send_chat_action(chat_id, "typing", timeout=60)
-                    message_counter = 0
-                update.effective_message.reply_text(chunk, parse_mode="HTML")
-                message_counter += 1
+        potfiles_dir = "/root/handshakes"
+        potfiles_list = os.listdir(potfiles_dir)
+        potfiles_list = [file for file in potfiles_list if file.endswith(".potfile")]
+
+        if not potfiles_list:
+            self.update_existing_message(
+                text="⛔ No cracked potfile found.", update=update
+            )
+            return
+
+        for potfile in potfiles_list:
+            file_path = f"{potfiles_dir}/{potfile}"
+            chunks = self.format_handshake_pot_files(file_path)
+            if not chunks or not any(chunk.strip() for chunk in chunks):
+                self.update_existing_message(
+                    text="The cracked potfile is empty.", update=update
+                )
+            else:
+                self.send_sticker(update, context, random.choice(stickers_handshake_or_wpa))
+                chat_id = update.effective_user["id"]
+                context.bot.send_chat_action(chat_id, "typing")
+                import time
+
+                message_counter = 0
+                for chunk in chunks:
+                    if message_counter >= 20:
+                        response = "💤 Sleeping for <b>60</b> seconds to avoid <i>flooding</i> the chat..."
+                        update.effective_message.reply_text(response)
+                        time.sleep(60)
+                        context.bot.send_chat_action(chat_id, "typing", timeout=60)
+                        message_counter = 0
+                    update.effective_message.reply_text(chunk, parse_mode="HTML")
+                    message_counter += 1
 
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
@@ -779,7 +794,7 @@ class Telegram(plugins.Plugin):
 /send_backup - Send the backup if it is available
 /fetch_pwngrid_inbox - Fetch the Pwngrid inbox
 /handshake_count - Get the handshake count
-/read_wpa_sec_cracked - Read the wpa-sec.cracked.potfile
+/read_potfiles_cracked - Read the all the cracked .potfile's
 /take_screenshot - Take a screenshot
 /create_backup - Create a backup
 
@@ -801,7 +816,7 @@ class Telegram(plugins.Plugin):
         last_session = agent.last_session
 
         try:
-            logging.info("[TELEGRAM] Connecting to Telegram...")
+            self.generate_log("Connecting to Telegram...", "INFO")
             bot = telegram.Bot(self.options["bot_token"])
             bot.set_my_commands(
                 commands=[
@@ -823,8 +838,8 @@ class Telegram(plugins.Plugin):
                         command="handshake_count", description="Get the handshake count"
                     ),
                     BotCommand(
-                        command="read_wpa_sec_cracked",
-                        description="Read the wpa-sec.cracked.potfile",
+                        command="read_potfiles_cracked",
+                        description="Read the every cracked .potfile",
                     ),
                     BotCommand(
                         command="fetch_pwngrid_inbox",
@@ -966,11 +981,10 @@ class Telegram(plugins.Plugin):
             # Move the tarball to /home/pi/
             subprocess.run(["sudo", "mv", backup_tar_path, "/home/pi/"])
 
-            logging.info("[TELEGRAM] Backup created and moved successfully.")
+            self.generate_log("Backup created and moved successfully.", "DEBUG")
 
         except Exception as e:
-            self.send_sticker(update, context, random.choice(stickers_exception))
-            logging.error(f"[TELEGRAM] Error creating or moving backup: {e}")
+            self.handle_exception(update, context, e)
 
         # Obtain the file size
 
@@ -1002,19 +1016,16 @@ class Telegram(plugins.Plugin):
         try:
             backup = self.last_backup
             if backup:
-                logging.info(f"[TELEGRAM] Sending backup: {backup}")
+                self.generate_log(f"Sending backup: {backup}", "DEBUG")
                 backup_path = f"/home/pi/{backup}"
                 with open(backup_path, "rb") as backup_file:
                     update.effective_chat.send_document(document=backup_file)
                 update.effective_message.reply_text("Backup sent successfully.")
             else:
-                logging.error("[TELEGRAM] No backup file found.")
+                self.generate_log("No backup file found.", "ERROR")
                 update.effective_message.reply_text("No backup file found.")
         except Exception as e:
-            self.send_sticker(update, context, random.choice(stickers_exception))
-            logging.error(f"[TELEGRAM] Error sending backup: {e}")
-            response = f"⛔ Error sending backup: <code>{e}</code>"
-            update.effective_message.reply_text(response, parse_mode="HTML")
+            self.handle_exception(update, context, e)
 
     def on_handshake(self, agent, filename, access_point, client_station):
         config = agent.config()
@@ -1036,12 +1047,12 @@ class Telegram(plugins.Plugin):
 
             display.set("status", "Telegram notification sent!")
             display.update(force=True)
-            # TODO Add button and option to send the handshake file!
+            # TODO: Add button and option to send the handshake file!
         except Exception:
             self.logger.exception("Error while sending on Telegram")
 
     def terminate_program(self):
-        logging.info("[TELEGRAM] All tasks completed. Terminating program.")
+        self.generate_log("All tasks completed. Terminating program.", "INFO")
 
 
 if __name__ == "__main__":
