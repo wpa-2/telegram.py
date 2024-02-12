@@ -5,6 +5,8 @@ import telegram
 import subprocess
 import pwnagotchi
 import random
+import codecs
+import base64
 import toml
 from time import sleep
 from pwnagotchi import fs
@@ -22,6 +24,8 @@ from telegram.ext import (
 )
 
 home_dir = "/home/pi"
+max_length_message = int(4096 // 2)
+max_messages_per_minute = 20
 
 main_menu = [
     [
@@ -84,10 +88,10 @@ class Telegram(plugins.Plugin):
         self.start_menu_sent = False
         # Read toml file
         try:
-            with open('/etc/pwnagotchi/config.toml', 'r') as f:
+            with open("/etc/pwnagotchi/config.toml", "r") as f:
                 config = toml.load(f)
-                self.screen_rotation = int(config['ui']['display']['rotation'])
-                self.plugins_dir = str(config['main']['custom']['plugins'])
+                self.screen_rotation = int(config["ui"]["display"]["rotation"])
+                self.plugins_dir = str(config["main"]["custom"]["plugins"])
         except:
             self.screen_rotation = 0
             self.plugins_dir = "/usr/local/share/pwnagotchi/custom-plugins"
@@ -240,6 +244,25 @@ class Telegram(plugins.Plugin):
                 lambda update, context: self.kill_ps_name(agent, update, context),
             )
         )
+
+        dispatcher.add_handler(
+            CommandHandler(
+                "turn_led_off",
+                lambda update, context: self.change_led(
+                    agent, update, context, on=False
+                ),
+            )
+        )
+
+        dispatcher.add_handler(
+            CommandHandler(
+                "turn_led_on",
+                lambda update, context: self.change_led(
+                    agent, update, context, on=True
+                ),
+            )
+        )
+
         dispatcher.add_handler(
             CallbackQueryHandler(
                 lambda update, context: self.button_handler(agent, update, context)
@@ -317,7 +340,7 @@ class Telegram(plugins.Plugin):
 
     # TODO: Create a function to handle exceptions and send all the exceptions to that function
     def handle_exception(self, update, context, e):
-        error_text = f"⛔ Unexpected error ocurred:\n<code>{e}</code>", "ERROR"
+        error_text = f"⛔ Unexpected error ocurred:\n<code>{e}</code>"
         self.generate_log(error_text, "ERROR")
         self.send_sticker(update, context, random.choice(stickers_exception))
         self.update_existing_message(update, error_text)
@@ -334,45 +357,84 @@ class Telegram(plugins.Plugin):
         elif type == "DEBUG":
             logging.debug(f"[TELEGRAM] {text}")
 
+    def change_led(self, agent, update, context, on=True):
+        # Write 0 or 255 to the led file to turn it off or on
+        if on:
+            value = "255"
+            switch = "on"
+        else:
+            value = "0"
+            switch = "off"
+        try:
+            with open("/sys/class/leds/ACT/brightness", "w") as f:
+                f.write(value)
+            self.update_existing_message(update, f"✅ LED turned {switch} correctly")
+        except Exception as e:
+            self.handle_exception(update, context, e)
+
     def send_sticker(self, update, context, fileid):
         user_id = update.effective_message.chat_id
         context.bot.send_sticker(chat_id=user_id, sticker=fileid)
 
+    def split_message_into_list(self, text):
+        list_of_messages = []
+        self.generate_log(f"Splitting message: {text}", "DEBUG")
+        while len(text) > max_length_message:
+            list_of_messages.append(text[:max_length_message])
+            text = text[max_length_message:]
+        list_of_messages.append(text)
+        return list_of_messages
+
     def update_existing_message(self, update, text, keyboard=[]):
-        try:
-            old_message = update.callback_query
-            old_message.answer()
-            go_back_button = [
-                InlineKeyboardButton("📲 Open Menu", callback_data="start"),
-            ]
-            if keyboard != main_menu and go_back_button not in keyboard:
-                # Add back button if the keyboard is not the main menu and the keyboard does not have the back button
-                keyboard.append(go_back_button)
-            old_message.edit_message_text(
-                text=text,
-                reply_markup=InlineKeyboardMarkup(keyboard),
-                parse_mode="HTML",
-            )
-            # Reset keyboard
-            keyboard = []
-        except:
+        if len(text) > max_length_message:
+            self.generate_log(f"Message too long: {text}", "DEBUG")
+            list_of_messages = self.split_message_into_list(text)
+            self.generate_log(f"List of messages: {list_of_messages}", "DEBUG")
+            counter = 0
+            for message in list_of_messages:
+                self.generate_log(f"Sending message: {message}", "DEBUG")
+                counter += 1
+                if counter >= max_messages_per_minute - 1:
+                    response = "💤 Sleeping for <b>60</b> seconds to avoid <i>flooding</i> the chat..."
+                    update.effective_message.reply_text(response)
+                    counter = 0
+                    sleep(60)
+                self.update_existing_message(update, message, keyboard)
+        else:
+            self.generate_log(f"Sending message: {text}", "DEBUG")
             try:
-                if keyboard:
-                    update.effective_message.reply_text(
-                        text,
-                        reply_markup=InlineKeyboardMarkup(keyboard),
-                        parse_mode="HTML",
-                    )
-                else:
-                    update.effective_message.reply_text(text, parse_mode="HTML")
-            except:
-                if keyboard:
-                    update.effective_message.reply_text(
-                        text, reply_markup=InlineKeyboardMarkup(keyboard)
-                    )
-                else:
-                    update.effective_message.reply_text(text)
-        return
+                old_message = update.callback_query
+                old_message.answer()
+                go_back_button = [
+                    InlineKeyboardButton("📲 Open Menu", callback_data="start"),
+                ]
+                if keyboard != main_menu and go_back_button not in keyboard:
+                    # Add back button if the keyboard is not the main menu and the keyboard does not have the back button
+                    keyboard.append(go_back_button)
+                old_message.edit_message_text(
+                    text=text,
+                    reply_markup=InlineKeyboardMarkup(keyboard),
+                    parse_mode="HTML",
+                )
+                # Reset keyboard
+                keyboard = []
+            except Exception:
+                try:
+                    if keyboard:
+                        update.effective_message.reply_text(
+                            text,
+                            reply_markup=InlineKeyboardMarkup(keyboard),
+                            parse_mode="HTML",
+                        )
+                    else:
+                        update.effective_message.reply_text(text, parse_mode="HTML")
+                except:
+                    if keyboard:
+                        update.effective_message.reply_text(
+                            text, reply_markup=InlineKeyboardMarkup(keyboard)
+                        )
+                    else:
+                        update.effective_message.reply_text(text)
 
     def run_as_user(self, cmd, user):
         uid = pwd.getpwnam(user).pw_uid
@@ -394,7 +456,7 @@ class Telegram(plugins.Plugin):
             # Check if the telegram-bot folder exists
             if not os.path.exists("telegram-bot"):
                 # Clone the telegram-bot repository if it doesn't exist
-                self.generate_log("Cloning telegram-bot repository...", "INFO")
+                self.generate_log("Cloning telegram-bot repository...", "DEBUG")
                 subprocess.run(
                     [
                         "git",
@@ -419,7 +481,9 @@ class Telegram(plugins.Plugin):
                     check=True,
                 )
                 # Add the repository as a safe directory as the pi user
-                self.generate_log("Adding telegram-bot repository as safe for pi...", "DEBUG")
+                self.generate_log(
+                    "Adding telegram-bot repository as safe for pi...", "DEBUG"
+                )
                 self.run_as_user(
                     "git config --global --add safe.directory /home/pi/telegram-bot",
                     "pi",
@@ -427,14 +491,21 @@ class Telegram(plugins.Plugin):
 
                 # Create a symbolic link so when the bot is updated, the new version is used
                 subprocess.run(
-                    ["ln", "-sf", "/home/pi/telegram-bot/telegram.py", self.plugins_dir],
+                    [
+                        "ln",
+                        "-sf",
+                        "/home/pi/telegram-bot/telegram.py",
+                        self.plugins_dir,
+                    ],
                     check=True,
                 )
             # Change directory to telegram-bot
             os.chdir("telegram-bot")
 
             # Pull the latest changes from the repository
-            self.generate_log("Pulling latest changes from telegram-bot repository...", "INFO")
+            self.generate_log(
+                "Pulling latest changes from telegram-bot repository...", "INFO"
+            )
             subprocess.run(["git", "pull"], check=True)
 
         except subprocess.CalledProcessError as e:
@@ -476,7 +547,6 @@ class Telegram(plugins.Plugin):
             self.update_existing_message(update, response)
         except Exception as e:
             self.handle_exception(update, context, e)
-
 
     def reboot(self, agent, update, context):
         keyboard = [
@@ -624,7 +694,7 @@ class Telegram(plugins.Plugin):
                     content = file.readlines()
                     for line in content:
                         pwned = line.split(":")[2:]
-                        if len(message + line) > 4096:
+                        if len(message + line) > max_length_message:
                             messages_list.append(message)
                             message = ""
                         # This code formatting allow us to copy the code block with one tap
@@ -642,7 +712,6 @@ class Telegram(plugins.Plugin):
             return [f"⛔ Error reading file: {e}"]
 
     def read_potfiles_cracked(self, agent, update, context):
-
         potfiles_dir = "/root/handshakes"
         potfiles_list = os.listdir(potfiles_dir)
         potfiles_list = [file for file in potfiles_list if file.endswith(".potfile")]
@@ -661,14 +730,16 @@ class Telegram(plugins.Plugin):
                     text="The cracked potfile is empty.", update=update
                 )
             else:
-                self.send_sticker(update, context, random.choice(stickers_handshake_or_wpa))
+                self.send_sticker(
+                    update, context, random.choice(stickers_handshake_or_wpa)
+                )
                 chat_id = update.effective_user["id"]
                 context.bot.send_chat_action(chat_id, "typing")
                 import time
 
                 message_counter = 0
                 for chunk in chunks:
-                    if message_counter >= 20:
+                    if message_counter >= max_messages_per_minute:
                         response = "💤 Sleeping for <b>60</b> seconds to avoid <i>flooding</i> the chat..."
                         update.effective_message.reply_text(response)
                         time.sleep(60)
@@ -739,29 +810,122 @@ class Telegram(plugins.Plugin):
         self.update_existing_message(update, response)
         return
 
+    def join_context_args(self, context):
+        args = context.args
+        if args:
+            return " ".join(args[:])
+        else:
+            return None
+
     def rot13(self, agent, update, context):
         """Encode/Decode ROT13"""
-        self.comming_soon(update, context)
+        try:
+            args = self.join_context_args(context)
+            if args:
+                rot13_text = codecs.encode(args, "rot_13")
+                response = f"🔠 ROT13: <code>{rot13_text}</code>"
+            else:
+                response = "⛔ No text provided to encode/decode with ROT13.\nUsage: /rot13 <code>text</code>"
+            self.update_existing_message(update, response)
+        except Exception as e:
+            self.handle_exception(update, context, e)
+        return
 
     def debase64(self, agent, update, context):
         """Decode Base64"""
-        self.comming_soon(update, context)
+        try:
+            args = self.join_context_args(context)
+            if args:
+                base64_text = base64.b64decode(args).decode()
+                response = f"🔠 Base64: <code>{base64_text}</code>"
+            else:
+                response = "⛔ No text provided to decode from Base64.\nUsage: /debase64 <code>base64 encode text</code>"
+            self.update_existing_message(update, response)
+        except Exception as e:
+            self.handle_exception(update, context, e)
+        return
 
     def base64(self, agent, update, context):
         """Encode Base64"""
-        self.comming_soon(update, context)
+        try:
+            args = self.join_context_args(context)
+            if args:
+                base64_text = base64.b64encode(args.encode()).decode()
+                response = f"🔠 Base64: <code>{base64_text}</code>"
+            else:
+                response = "⛔ No text provided to encode to Base64.\nUsage: /base64 <code>text to base64 encode</code>"
+            self.update_existing_message(update, response)
+        except Exception as e:
+            self.handle_exception(update, context, e)
+        return
+
+    def sanitize_text_to_send(self, text):
+        """Sanitize some characters so we don't break the html format"""
+        return (
+            text.replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("&", "&amp;")
+            .replace("_", "\_")
+            .replace("*", "\*")
+            .replace("`", "\`")
+        )
 
     def command_executed(self, update, context):
         """Execute a command on the pwnagotchi"""
-        self.comming_soon(update, context)
+        try:
+            args = self.join_context_args(context)
+            if args:
+                chat_id = update.effective_user["id"]
+                context.bot.send_chat_action(chat_id, "typing")
+                # Execute the  args provided and send the output to the chat
+                output = subprocess.check_output(args, shell=True).decode("utf-8")
+                response = f"🔠 ~>$: <code>{args}</code>\n\n📜 ~>$: <code>{self.sanitize_text_to_send(output)}</code>"
+            else:
+                response = "⛔ No command provided to execute.\nUsage: /cmd <code>command</code>"
+            self.update_existing_message(update, response)
+        except Exception as e:
+            self.handle_exception(update, context, e)
+        return
 
     def kill_ps(self, agent, update, context):
         """Kill a process by id"""
-        self.comming_soon(update, context)
+        try:
+            args = self.join_context_args(context)
+            if args:
+                try:
+                    subprocess.run(["sudo", "kill", "-9", args])
+                    response = f"🔠 Process <code>{args}</code> killed."
+                except subprocess.CalledProcessError as e:
+                    response = f"⛔ Error killing process <code>{args}</code>: <code>{e}</code>"
+                except Exception as e:
+                    response = f"⛔ Unexpected error killing process <code>{args}</code>: <code>{e}</code>"
+                    self.generate_log(response, "ERROR")
+            else:
+                response = "⛔ No process id provided to kill.\nUsage: /kill_ps <code>process_id</code>"
+            self.update_existing_message(update, response)
+        except Exception as e:
+            self.handle_exception(update, context, e)
+        return
 
     def kill_ps_name(self, agent, update, context):
         """Kill a process by name"""
-        self.comming_soon(update, context)
+        try:
+            args = self.join_context_args(context)
+            if args:
+                try:
+                    subprocess.run(["sudo", "pkill", args])
+                    response = f"🔠 Process <code>{args}</code> killed."
+                except subprocess.CalledProcessError as e:
+                    response = f"⛔ Error killing process <code>{args}</code>: <code>{e}</code>"
+                except Exception as e:
+                    response = f"⛔ Unexpected error killing process <code>{args}</code>: <code>{e}</code>"
+                    self.generate_log(response, "ERROR")
+            else:
+                response = "⛔ No process name provided to kill.\nUsage: /kill_ps_name <code>process_name</code>"
+            self.update_existing_message(update, response)
+        except Exception as e:
+            self.handle_exception(update, context, e)
+        return
 
     def help(self, update, context):
         list_of_commands_with_descriptions = """
@@ -881,6 +1045,12 @@ class Telegram(plugins.Plugin):
                     BotCommand(command="kill_ps", description="Kill a process (By id)"),
                     BotCommand(
                         command="kill_ps_name", description="Kill a process (By name)"
+                    ),
+                    BotCommand(
+                        command="turn_led_on", description="Turn the ACT led on"
+                    ),
+                    BotCommand(
+                        command="turn_led_off", description="Turn the ACT led off"
                     ),
                 ],
                 scope=telegram.BotCommandScopeAllPrivateChats(),
