@@ -249,7 +249,7 @@ class Telegram(plugins.Plugin):
             CommandHandler(
                 "turn_led_off",
                 lambda update, context: self.change_led(
-                    agent, update, context, mode="on"
+                    agent, update, context, mode="off"
                 ),
             )
         )
@@ -258,7 +258,7 @@ class Telegram(plugins.Plugin):
             CommandHandler(
                 "turn_led_on",
                 lambda update, context: self.change_led(
-                    agent, update, context, mode="off"
+                    agent, update, context, mode="on"
                 ),
             )
         )
@@ -1172,7 +1172,7 @@ class Telegram(plugins.Plugin):
             self.terminate_program()
         return backup_file_name
 
-    def send_backup(self, update, context):
+    def send_backup(self, agent, update, context):
         chat_id = update.effective_user["id"]
         context.bot.send_chat_action(chat_id, "upload_document")
 
