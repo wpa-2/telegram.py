@@ -24,7 +24,7 @@ from telegram.ext import (
 )
 
 home_dir = "/home/pi"
-max_length_message = 4096/2
+max_length_message = int(4096 // 2)
 max_messages_per_minute = 20
 
 main_menu = [
@@ -375,7 +375,7 @@ class Telegram(plugins.Plugin):
 
     def split_message_into_list(self, text):
         list_of_messages = []
-        logging.info(f"Splitting message: {text}")
+        self.generate_log(f"Splitting message: {text}", "DEBUG")
         while len(text) > max_length_message:
             list_of_messages.append(text[:max_length_message])
             text = text[max_length_message:]
