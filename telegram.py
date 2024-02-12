@@ -375,17 +375,23 @@ class Telegram(plugins.Plugin):
 
     def update_existing_message(self, update, text, keyboard=[]):
         if len(text) >= max_length_message:
-            message_counter = 0
-            while len(text) > max_length_message:
-                message_counter += 1
-                if message_counter >= max_messages_per_minute:
-                    response = "💤 Sleeping for <b>60</b> seconds to avoid <i>flooding</i> the chat..."
-                    update.effective_message.reply_text(response)
-                    sleep(60)
-                    message_counter = 0
-                self.update_existing_message(update, text[:max_length_message])
-                text = text[max_length_message:]
+            try:
+                response = "Message to long, splitting..."
+                self.update_existing_message(update, text)
+                message_counter = 0
+                while len(text) > max_length_message:
+                    message_counter += 1
+                    if message_counter >= max_messages_per_minute:
+                        response = "💤 Sleeping for <b>60</b> seconds to avoid <i>flooding</i> the chat..."
+                        update.effective_message.reply_text(response)
+                        sleep(60)
+                        message_counter = 0
+                    self.update_existing_message(update, text[:max_length_message])
+                    text = text[max_length_message:]
+            except Exception as e:
+                logging.error(f"[TELEGRAM] Error sending message: {e}")
         else:
+            self.generate_log(f"Sending message: {text}", "INFO")
             try:
                 old_message = update.callback_query
                 old_message.answer()
@@ -419,7 +425,6 @@ class Telegram(plugins.Plugin):
                         )
                     else:
                         update.effective_message.reply_text(text)
-            return
 
     def run_as_user(self, cmd, user):
         uid = pwd.getpwnam(user).pw_uid
