@@ -201,7 +201,7 @@ class Telegram(plugins.Plugin):
         )
         dispatcher.add_handler(
             CommandHandler(
-                "send_backup", lambda update, context: self.send_backup(update, context)
+                "send_backup", lambda update, context: self.send_backup(agent, update, context)
             )
         )
         dispatcher.add_handler(
@@ -271,9 +271,8 @@ class Telegram(plugins.Plugin):
 
     def start(self, agent, update, context):
         # Verify if the user is authorized
-        # TODO: Get the options with .get()
         if update.effective_chat.id == int(self.options.get("chat_id")):
-            bot_name = self.options.get("bot_name", "Pwnagotchi")
+            bot_name = str(self.options.get("bot_name", "Pwnagotchi"))
             response = f"🖖 Welcome to <b>{bot_name}</b>\n\nPlease select an option:"
             reply_markup = InlineKeyboardMarkup(main_menu)
             self.send_new_message(update, context, response, reply_markup)
@@ -311,7 +310,7 @@ class Telegram(plugins.Plugin):
                 ),
             }
 
-            action = action_map.get(query.data)
+            action = action_map.get(str(query.data))
             if action:
                 action(agent, update, context)
 
@@ -365,11 +364,11 @@ class Telegram(plugins.Plugin):
         list_of_messages.append(text)
         return list_of_messages
 
-    def send_new_message(self, update, context, text, keyboard=[]):
+    def send_new_message(self, update, context, text:str, keyboard:InlineKeyboardMarkup=InlineKeyboardMarkup([[]])):
         try:
             reply_kwargs = {"parse_mode": "HTML"}
             if keyboard:
-                reply_kwargs["reply_markup"] = InlineKeyboardMarkup(keyboard)
+                reply_kwargs["reply_markup"] = keyboard
             update.effective_message.reply_text(text, **reply_kwargs)
         except Exception as e:
             self.handle_exception(update, context, e)
@@ -421,10 +420,10 @@ class Telegram(plugins.Plugin):
             )
         except Exception as e:
             # self.handle_exception(update, None, e)
-            self.send_new_message(update, context, text, keyboard)
+            self.send_new_message(update, context, text, InlineKeyboardMarkup(keyboard))
 
     def run_as_user(self, cmd, user):
-        uid = pwd.getpwnam(user).pw_uid
+        uid = pwd.getpwnam(str(user)).pw_uid
         os.setuid(uid)
         os.system(cmd)
         os.setuid(0)
