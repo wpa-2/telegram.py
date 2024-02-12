@@ -316,6 +316,11 @@ class Telegram(plugins.Plugin):
                 self.terminate_program()
 
     # TODO: Create a function to handle exceptions and send all the exceptions to that function
+    def handle_exception(self, update, context, e):
+        error_text = f"⛔ Unexpected error ocurred:\n<code>{e}</code>", "ERROR"
+        self.generate_log(error_text, "ERROR")
+        self.send_sticker(update, context, random.choice(stickers_exception))
+        self.update_existing_message(update, error_text)
 
     def generate_log(self, text, type="INFO"):
         # TODO: Implement this function on all the logs
@@ -377,7 +382,7 @@ class Telegram(plugins.Plugin):
         return
 
     def bot_update(self, update, context):
-        logging.info("[TELEGRAM] Updating bot...")
+        self.generate_log("Updating bot...", "INFO")
         response = "🆙 Updating bot..."
         self.update_existing_message(update, response)
         chat_id = update.effective_user["id"]
@@ -389,7 +394,7 @@ class Telegram(plugins.Plugin):
             # Check if the telegram-bot folder exists
             if not os.path.exists("telegram-bot"):
                 # Clone the telegram-bot repository if it doesn't exist
-                logging.debug("[TELEGRAM] Cloning telegram-bot repository...")
+                self.generate_log("Cloning telegram-bot repository...", "INFO")
                 subprocess.run(
                     [
                         "git",
@@ -401,7 +406,7 @@ class Telegram(plugins.Plugin):
                 )
 
                 # Add the repository as a safe directory as root
-                logging.debug("[TELEGRAM] Adding telegram-bot repository as safe...")
+                self.generate_log("Adding telegram-bot repository as safe...", "DEBUG")
                 subprocess.run(
                     [
                         "git",
@@ -414,9 +419,7 @@ class Telegram(plugins.Plugin):
                     check=True,
                 )
                 # Add the repository as a safe directory as the pi user
-                logging.debug(
-                    "[TELEGRAM] Adding telegram-bot repository as safe for pi..."
-                )
+                self.generate_log("Adding telegram-bot repository as safe for pi...", "DEBUG")
                 self.run_as_user(
                     "git config --global --add safe.directory /home/pi/telegram-bot",
                     "pi",
@@ -431,9 +434,7 @@ class Telegram(plugins.Plugin):
             os.chdir("telegram-bot")
 
             # Pull the latest changes from the repository
-            logging.info(
-                "[TELEGRAM] Pulling latest changes from telegram-bot repository..."
-            )
+            self.generate_log("Pulling latest changes from telegram-bot repository...", "INFO")
             subprocess.run(["git", "pull"], check=True)
 
         except subprocess.CalledProcessError as e:
@@ -472,11 +473,10 @@ class Telegram(plugins.Plugin):
                 context.bot.send_photo(chat_id=update.effective_chat.id, photo=photo)
 
             response = "✅ Screenshot taken and sent!"
+            self.update_existing_message(update, response)
         except Exception as e:
-            self.send_sticker(update, context, random.choice(stickers_exception))
-            response = f"⛔ Error taking screenshot: <code>{e}</code>"
+            self.handle_exception(update, context, e)
 
-        self.update_existing_message(update, response)
 
     def reboot(self, agent, update, context):
         keyboard = [
@@ -503,8 +503,7 @@ class Telegram(plugins.Plugin):
 
         try:
             response = reboot_text
-            logging.warning("[TELEGRAM]", reboot_text)
-
+            self.generate_log(reboot_text, "WARNING")
             self.update_existing_message(update, response)
 
             if view.ROOT:
@@ -517,23 +516,21 @@ class Telegram(plugins.Plugin):
             elif mode == "MANU":
                 subprocess.run(["sudo", "touch", "/root/.pwnagotchi-manual"])
 
-            logging.warning("[TELEGRAM] syncing...")
+            self.generate_log("syncing...", "WARNING")
 
             for m in fs.mounts:
                 m.sync()
 
+            self.generate_log("rebooting...", "INFO")
             subprocess.run(["sudo", "sync"])
             subprocess.run(["sudo", "reboot"])
         except Exception as e:
-            self.send_sticker(update, context, random.choice(stickers_exception))
-            logging.error(f"[TELEGRAM] Error rebooting: {e}")
-            response = f"⛔ Error rebooting: <b>{e}</b>"
-            update.effective_message.reply_text(response)
+            self.handle_exception(update, context, e)
 
     def shutdown(self, update, context):
         response = "📴 Shutting down <b>now</b>..."
         self.update_existing_message(update, response)
-        logging.warning("[TELEGRAM] shutting down ...")
+        self.generate_log("shutting down...", "WARNING")
 
         try:
             if view.ROOT:
@@ -541,7 +538,7 @@ class Telegram(plugins.Plugin):
                 # Give it some time to refresh the ui
                 sleep(10)
 
-            logging.warning("[TELEGRAM] syncing...")
+            self.generate_log("syncing...", "WARNING")
 
             for m in fs.mounts:
                 m.sync()
@@ -549,10 +546,7 @@ class Telegram(plugins.Plugin):
             subprocess.run(["sudo", "sync"])
             subprocess.run(["sudo", "halt"])
         except Exception as e:
-            self.send_sticker(update, context, random.choice(stickers_exception))
-            logging.error(f"[TELEGRAM] Error shutting down: {e}")
-            response = f"⛔ Error shutting down: <code>{e}</code>"
-            update.effective_message.reply_text(response)
+            self.handle_exception(update, context, e)
         return
 
     def soft_restart(self, update):
@@ -572,7 +566,7 @@ class Telegram(plugins.Plugin):
         return
 
     def soft_restart_mode(self, mode, update, context):
-        logging.warning("[TELEGRAM] restarting in %s mode ...", mode)
+        self.generate_log(f"restarting in {mode} mode ...")
         response = f"🔃 Restarting in <b>{mode}</b> mode..."
         self.update_existing_message(update, response)
 
@@ -588,10 +582,7 @@ class Telegram(plugins.Plugin):
 
             subprocess.run(["sudo", "systemctl", "restart", "pwnagotchi"])
         except Exception as e:
-            self.send_sticker(update, context, random.choice(stickers_exception))
-            logging.error(f"[TELEGRAM] Error restarting: {e}")
-            response = f"⛔ Error restarting: <code>{e}</code>"
-            update.effective_message.reply_text(response, parse_mode="HTML")
+            self.handle_exception(update, context, e)
         return
 
     def uptime(self, agent, update, context):
@@ -825,7 +816,7 @@ class Telegram(plugins.Plugin):
         last_session = agent.last_session
 
         try:
-            logging.info("[TELEGRAM] Connecting to Telegram...")
+            self.generate_log("Connecting to Telegram...", "INFO")
             bot = telegram.Bot(self.options["bot_token"])
             bot.set_my_commands(
                 commands=[
@@ -990,11 +981,10 @@ class Telegram(plugins.Plugin):
             # Move the tarball to /home/pi/
             subprocess.run(["sudo", "mv", backup_tar_path, "/home/pi/"])
 
-            logging.info("[TELEGRAM] Backup created and moved successfully.")
+            self.generate_log("Backup created and moved successfully.", "DEBUG")
 
         except Exception as e:
-            self.send_sticker(update, context, random.choice(stickers_exception))
-            logging.error(f"[TELEGRAM] Error creating or moving backup: {e}")
+            self.handle_exception(update, context, e)
 
         # Obtain the file size
 
@@ -1026,19 +1016,16 @@ class Telegram(plugins.Plugin):
         try:
             backup = self.last_backup
             if backup:
-                logging.info(f"[TELEGRAM] Sending backup: {backup}")
+                self.generate_log(f"Sending backup: {backup}", "DEBUG")
                 backup_path = f"/home/pi/{backup}"
                 with open(backup_path, "rb") as backup_file:
                     update.effective_chat.send_document(document=backup_file)
                 update.effective_message.reply_text("Backup sent successfully.")
             else:
-                logging.error("[TELEGRAM] No backup file found.")
+                self.generate_log("No backup file found.", "ERROR")
                 update.effective_message.reply_text("No backup file found.")
         except Exception as e:
-            self.send_sticker(update, context, random.choice(stickers_exception))
-            logging.error(f"[TELEGRAM] Error sending backup: {e}")
-            response = f"⛔ Error sending backup: <code>{e}</code>"
-            update.effective_message.reply_text(response, parse_mode="HTML")
+            self.handle_exception(update, context, e)
 
     def on_handshake(self, agent, filename, access_point, client_station):
         config = agent.config()
@@ -1065,7 +1052,7 @@ class Telegram(plugins.Plugin):
             self.logger.exception("Error while sending on Telegram")
 
     def terminate_program(self):
-        logging.info("[TELEGRAM] All tasks completed. Terminating program.")
+        self.generate_log("All tasks completed. Terminating program.", "INFO")
 
 
 if __name__ == "__main__":
