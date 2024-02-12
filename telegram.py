@@ -22,8 +22,6 @@ from telegram.ext import (
 )
 
 home_dir = "/home/pi"
-# TODO: Get plugins dir from config file
-plugins_dir = "/usr/local/share/pwnagotchi/custom-plugins"
 
 main_menu = [
     [
@@ -89,8 +87,10 @@ class Telegram(plugins.Plugin):
             with open('/etc/pwnagotchi/config.toml', 'r') as f:
                 config = toml.load(f)
                 self.screen_rotation = int(config['ui']['display']['rotation'])
+                self.plugins_dir = str(config['main']['custom']['plugins'])
         except:
             self.screen_rotation = 0
+            self.plugins_dir = "/usr/local/share/pwnagotchi/custom-plugins"
 
     def on_agent(self, agent):
         if "auto_start" in self.options and self.options["auto_start"]:
@@ -424,7 +424,7 @@ class Telegram(plugins.Plugin):
 
                 # Create a symbolic link so when the bot is updated, the new version is used
                 subprocess.run(
-                    ["ln", "-sf", "/home/pi/telegram-bot/telegram.py", plugins_dir],
+                    ["ln", "-sf", "/home/pi/telegram-bot/telegram.py", self.plugins_dir],
                     check=True,
                 )
             # Change directory to telegram-bot
