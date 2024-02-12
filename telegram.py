@@ -476,7 +476,7 @@ class Telegram(plugins.Plugin):
             self.send_sticker(update, context, random.choice(stickers_exception))
             response = f"⛔ Error taking screenshot: <code>{e}</code>"
 
-        update.effective_message.reply_text(response, parse_mode="HTML")
+        self.update_existing_message(update, response)
 
     def reboot(self, agent, update, context):
         keyboard = [
