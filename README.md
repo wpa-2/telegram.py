@@ -3,6 +3,7 @@
 
 ![Screenshot 2024-02-09 230346](https://github.com/wpa-2/telegram.py/assets/9049886/7733bb84-64b5-493e-b0ba-b8a386f2d348)
 
+![Screenshot 2024-02-12 215402](https://github.com/wpa-2/telegram.py/assets/9049886/8729120a-c973-4415-8194-06c84f138a57)
 
 
 
