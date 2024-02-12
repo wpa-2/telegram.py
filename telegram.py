@@ -10,7 +10,6 @@ from time import sleep
 from pwnagotchi import fs
 from pwnagotchi.ui import view
 from pwnagotchi.voice import Voice
-from pwnagotchi.utils import led
 import pwnagotchi.plugins as plugins
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.botcommand import BotCommand
@@ -352,7 +351,19 @@ class Telegram(plugins.Plugin):
             logging.debug(f"[TELEGRAM] {text}")
 
     def change_led(self, agent, update, context, on=True):
-        led(on)
+        # Write 0 or 255 to the led file to turn it off or on
+        if on:
+            value = "255"
+            switch = "on"
+        else:
+            value = "0"
+            switch = "off"
+        try:
+            with open("/sys/class/leds/ACT/brightness", "w") as f:
+                f.write(value)
+            self.update_existing_message(update, f"✅ LED turned {switch} correctly")
+        except Exception as e:
+            self.handle_exception(update, context, e)
 
     def send_sticker(self, update, context, fileid):
         user_id = update.effective_message.chat_id
