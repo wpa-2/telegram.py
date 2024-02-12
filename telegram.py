@@ -26,7 +26,6 @@ from telegram.ext import (
 home_dir = "/home/pi"
 max_length_message = int(4096 // 2)
 max_messages_per_minute = 20
-
 main_menu = [
     [
         InlineKeyboardButton("🔄 Reboot", callback_data="reboot"),
@@ -86,6 +85,7 @@ class Telegram(plugins.Plugin):
         self.num_tasks = 8  # Increased for the new pwnkill task
         self.updater = None
         self.start_menu_sent = False
+        self.last_backup = ""
         # Read toml file
         try:
             with open("/etc/pwnagotchi/config.toml", "r") as f:
@@ -249,7 +249,7 @@ class Telegram(plugins.Plugin):
             CommandHandler(
                 "turn_led_off",
                 lambda update, context: self.change_led(
-                    agent, update, context, on=False
+                    agent, update, context, mode="on"
                 ),
             )
         )
@@ -258,7 +258,7 @@ class Telegram(plugins.Plugin):
             CommandHandler(
                 "turn_led_on",
                 lambda update, context: self.change_led(
-                    agent, update, context, on=True
+                    agent, update, context, mode="off"
                 ),
             )
         )
@@ -272,68 +272,48 @@ class Telegram(plugins.Plugin):
     def start(self, agent, update, context):
         # Verify if the user is authorized
         # TODO: Get the options with .get()
-        if update.effective_chat.id == int(self.options["chat_id"]):
-            try:
-                self.options["bot_name"]
-            except:
-                self.options["bot_name"] = "Pwnagotchi"
-
-            bot_name = self.options["bot_name"]
+        if update.effective_chat.id == int(self.options.get("chat_id")):
+            bot_name = self.options.get("bot_name", "Pwnagotchi")
             response = f"🖖 Welcome to <b>{bot_name}</b>\n\nPlease select an option:"
             reply_markup = InlineKeyboardMarkup(main_menu)
-            try:
-                update.message.reply_text(
-                    response, reply_markup=reply_markup, parse_mode="HTML"
-                )
-            except AttributeError:
-                self.update_existing_message(update, context, response, main_menu)
-            except:
-                update.effective_message.reply_text(
-                    response, reply_markup=reply_markup, parse_mode="HTML"
-                )
+            self.send_new_message(update, context, response, reply_markup)
         return
 
     def button_handler(self, agent, update, context):
-        if update.effective_chat.id == int(self.options["chat_id"]):
+        if update.effective_chat.id == int(self.options.get("chat_id")):
             query = update.callback_query
             query.answer()
 
-            if query.data == "reboot":
-                self.reboot(agent, update, context)
-            elif query.data == "reboot_to_manual":
-                self.reboot_mode("MANUAL", update, context)
-            elif query.data == "reboot_to_auto":
-                self.reboot_mode("AUTO", update, context)
-            elif query.data == "shutdown":
-                self.shutdown(update, context)
-            elif query.data == "uptime":
-                self.uptime(agent, update, context)
-            elif query.data == "read_potfiles_cracked":
-                self.read_potfiles_cracked(agent, update, context)
-            elif query.data == "handshake_count":
-                self.handshake_count(agent, update, context)
-            elif query.data == "fetch_pwngrid_inbox":
-                self.handle_pwngrid_inbox(agent, update, context)
-            elif query.data == "read_memtemp":
-                self.handle_memtemp(agent, update, context)
-            elif query.data == "take_screenshot":
-                self.take_screenshot(agent, update, context)
-            elif query.data == "create_backup":
-                self.last_backup = self.create_backup(agent, update, context)
-            elif query.data == "pwnkill":
-                self.pwnkill(agent, update, context)
-            elif query.data == "start":
-                self.start(agent, update, context)
-            elif query.data == "soft_restart":
-                self.soft_restart(update, context)
-            elif query.data == "soft_restart_to_manual":
-                self.soft_restart_mode("MANUAL", update, context)
-            elif query.data == "soft_restart_to_auto":
-                self.soft_restart_mode("AUTO", update, context)
-            elif query.data == "send_backup":
-                self.send_backup(update, context)
-            elif query.data == "bot_update":
-                self.bot_update(update, context)
+            action_map = {
+                "reboot": self.reboot,
+                "reboot_to_manual": lambda: self.reboot_mode("MANUAL", update, context),
+                "reboot_to_auto": lambda: self.reboot_mode("AUTO", update, context),
+                "shutdown": self.shutdown,
+                "uptime": self.uptime,
+                "read_potfiles_cracked": self.read_potfiles_cracked,
+                "handshake_count": self.handshake_count,
+                "fetch_pwngrid_inbox": self.handle_pwngrid_inbox,
+                "read_memtemp": self.handle_memtemp,
+                "take_screenshot": self.take_screenshot,
+                "pwnkill": self.pwnkill,
+                "start": self.start,
+                "soft_restart": self.soft_restart,
+                "soft_restart_to_manual": lambda: self.soft_restart_mode(
+                    "MANUAL", update, context
+                ),
+                "soft_restart_to_auto": lambda: self.soft_restart_mode(
+                    "AUTO", update, context
+                ),
+                "send_backup": self.send_backup,
+                "bot_update": self.bot_update,
+                "create_backup": lambda: self.last_backup.__setitem__(
+                    None, self.create_backup(agent, update, context)
+                ),
+            }
+
+            action = action_map.get(query.data)
+            if action:
+                action(agent, update, context)
 
             self.completed_tasks += 1
             if self.completed_tasks == self.num_tasks:
@@ -347,27 +327,28 @@ class Telegram(plugins.Plugin):
 
     def generate_log(self, text, type="INFO"):
         """Create a log with the plugin name"""
-        if type == "INFO":
-            logging.info(f"[TELEGRAM] {text}")
-        elif type == "ERROR":
-            logging.error(f"[TELEGRAM] {text}")
-        elif type == "WARNING":
-            logging.warning(f"[TELEGRAM] {text}")
-        elif type == "DEBUG":
-            logging.debug(f"[TELEGRAM] {text}")
+        log_map = {
+            "INFO": logging.info,
+            "ERROR": logging.error,
+            "WARNING": logging.warning,
+            "DEBUG": logging.debug,
+        }
+        log = log_map.get(type, logging.info)
+        log(f"[TELEGRAM] {text}")
 
-    def change_led(self, agent, update, context, on=True):
+    def change_led(self, agent, update, context, mode="on"):
         # Write 0 or 255 to the led file to turn it off or on
-        if on:
-            value = "255"
-            switch = "on"
-        else:
-            value = "0"
-            switch = "off"
+        led_map = {
+            "on": "255",
+            "off": "0",
+        }
+        led = led_map.get(mode, "255")
         try:
             with open("/sys/class/leds/ACT/brightness", "w") as f:
-                f.write(value)
-            self.update_existing_message(update, context, f"✅ LED turned {switch} correctly")
+                f.write(led)
+            self.update_existing_message(
+                update, context, f"✅ LED turned {mode} correctly"
+            )
         except Exception as e:
             self.handle_exception(update, context, e)
 
@@ -386,58 +367,61 @@ class Telegram(plugins.Plugin):
 
     def send_new_message(self, update, context, text, keyboard=[]):
         try:
+            reply_kwargs = {"parse_mode": "HTML"}
             if keyboard:
-                update.effective_message.reply_text(
-                    text,
-                    reply_markup=InlineKeyboardMarkup(keyboard),
-                    parse_mode="HTML",
-                )
-            else:
-                update.effective_message.reply_text(text, parse_mode="HTML")
-        except Exception:
-            if keyboard:
-                update.effective_message.reply_text(
-                    text, reply_markup=InlineKeyboardMarkup(keyboard)
-                )
-            else:
-                update.effective_message.reply_text(text)
+                reply_kwargs["reply_markup"] = InlineKeyboardMarkup(keyboard)
+            update.effective_message.reply_text(text, **reply_kwargs)
+        except Exception as e:
+            self.handle_exception(update, context, e)
 
     def update_existing_message(self, update, context, text, keyboard=[]):
         if len(text) > max_length_message:
             self.generate_log(f"Message too long: {text}", "DEBUG")
             list_of_messages = self.split_message_into_list(text)
             self.generate_log(f"List of messages: {list_of_messages}", "DEBUG")
-            counter = 0
-            for message in list_of_messages:
-                self.generate_log(f"Sending message: {message}", "DEBUG")
-                counter += 1
-                if counter >= max_messages_per_minute - 1:
-                    response = "💤 Sleeping for <b>60</b> seconds to avoid <i>flooding</i> the chat..."
-                    update.effective_message.reply_text(response)
-                    counter = 0
-                    sleep(60)
-                self.update_existing_message(update, context, message, keyboard)
+            self.send_long_messages(list_of_messages, update, context)
         else:
             self.generate_log(f"Sending message: {text}", "DEBUG")
-            go_back_button = [
-                InlineKeyboardButton("📲 Open Menu", callback_data="start"),
-            ]
-            if keyboard != main_menu and go_back_button not in keyboard:
-                # Add back button if the keyboard is not the main menu and the keyboard does not have the back button
-                keyboard.append(go_back_button)
-            try:
-                old_message = update.callback_query
-                old_message.answer()
-                old_message.edit_message_text(
-                    text=text,
-                    reply_markup=InlineKeyboardMarkup(keyboard),
-                    parse_mode="HTML",
-                )
-                # Reset keyboard
-                keyboard = []
-            except Exception as e:
-                self.handle_exception(update, None, e)
-                self.send_new_message(update, text, keyboard)
+            keyboard = self.add_go_back_button(keyboard)
+            self.send_or_edit_message(update, text, keyboard)
+
+    def send_long_messages(self, list_of_messages, update, context):
+        counter = 0
+        for message in list_of_messages:
+            self.generate_log(f"Sending message: {message}", "DEBUG")
+            counter += 1
+            if counter >= max_messages_per_minute - 1:
+                self.sleep_and_notify(update, context)
+                counter = 0
+            self.update_existing_message(update, context, message)
+
+    def sleep_and_notify(self, update, context):
+        response = (
+            "💤 Sleeping for <b>60</b> seconds to avoid <i>flooding</i> the chat..."
+        )
+        self.send_new_message(update, context, response)
+        sleep(60)
+
+    def add_go_back_button(self, keyboard):
+        go_back_button = [
+            InlineKeyboardButton("📲 Open Menu", callback_data="start"),
+        ]
+        if keyboard != main_menu and go_back_button not in keyboard:
+            keyboard.append(go_back_button)
+        return keyboard
+
+    def send_or_edit_message(self, update, text, keyboard):
+        try:
+            old_message = update.callback_query
+            old_message.answer()
+            old_message.edit_message_text(
+                text=text,
+                reply_markup=InlineKeyboardMarkup(keyboard),
+                parse_mode="HTML",
+            )
+        except Exception as e:
+            self.handle_exception(update, None, e)
+            self.send_new_message(update, text, keyboard)
 
     def run_as_user(self, cmd, user):
         uid = pwd.getpwnam(user).pw_uid
@@ -975,7 +959,9 @@ class Telegram(plugins.Plugin):
 /soft_restart_to_manual - Restart the daemon to manual mode
 /soft_restart_to_auto - Restart the daemon to auto mode
         """
-        self.update_existing_message(update, context, list_of_commands_with_descriptions)
+        self.update_existing_message(
+            update, context, list_of_commands_with_descriptions
+        )
         return
 
     def on_internet_available(self, agent):
