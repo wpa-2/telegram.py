@@ -16,12 +16,14 @@ function is_bookworm() {
 }
 
 function remove_dependencies() {
-	pip3 uninstall telegram python-telegram-bot
+	if is_bookworm; then
+		pip3 uninstall telegram python-telegram-bot --break-system-packages
+	else
+		pip3 uninstall telegram python-telegram-bot
+	fi
 }
 
 function install_dependencies() {
-	pip3 uninstall telegram python-telegram-bot
-
 	if is_bookworm; then
 		pip3 install python-telegram-bot==13.15 --break-system-packages
 	else
