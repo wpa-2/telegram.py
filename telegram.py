@@ -271,6 +271,7 @@ class Telegram(plugins.Plugin):
 
     def start(self, agent, update, context):
         # Verify if the user is authorized
+        # TODO: Get the options with .get()
         if update.effective_chat.id == int(self.options["chat_id"]):
             try:
                 self.options["bot_name"]
@@ -285,7 +286,7 @@ class Telegram(plugins.Plugin):
                     response, reply_markup=reply_markup, parse_mode="HTML"
                 )
             except AttributeError:
-                self.update_existing_message(update, response, main_menu)
+                self.update_existing_message(update, context, response, main_menu)
             except:
                 update.effective_message.reply_text(
                     response, reply_markup=reply_markup, parse_mode="HTML"
@@ -324,7 +325,7 @@ class Telegram(plugins.Plugin):
             elif query.data == "start":
                 self.start(agent, update, context)
             elif query.data == "soft_restart":
-                self.soft_restart(update)
+                self.soft_restart(update, context)
             elif query.data == "soft_restart_to_manual":
                 self.soft_restart_mode("MANUAL", update, context)
             elif query.data == "soft_restart_to_auto":
@@ -338,15 +339,13 @@ class Telegram(plugins.Plugin):
             if self.completed_tasks == self.num_tasks:
                 self.terminate_program()
 
-    # TODO: Create a function to handle exceptions and send all the exceptions to that function
     def handle_exception(self, update, context, e):
         error_text = f"⛔ Unexpected error ocurred:\n<code>{e}</code>"
         self.generate_log(error_text, "ERROR")
         self.send_sticker(update, context, random.choice(stickers_exception))
-        self.update_existing_message(update, error_text)
+        self.send_new_message(update, context, error_text)
 
     def generate_log(self, text, type="INFO"):
-        # TODO: Implement this function on all the logs
         """Create a log with the plugin name"""
         if type == "INFO":
             logging.info(f"[TELEGRAM] {text}")
@@ -368,7 +367,7 @@ class Telegram(plugins.Plugin):
         try:
             with open("/sys/class/leds/ACT/brightness", "w") as f:
                 f.write(value)
-            self.update_existing_message(update, f"✅ LED turned {switch} correctly")
+            self.update_existing_message(update, context, f"✅ LED turned {switch} correctly")
         except Exception as e:
             self.handle_exception(update, context, e)
 
@@ -385,7 +384,25 @@ class Telegram(plugins.Plugin):
         list_of_messages.append(text)
         return list_of_messages
 
-    def update_existing_message(self, update, text, keyboard=[]):
+    def send_new_message(self, update, context, text, keyboard=[]):
+        try:
+            if keyboard:
+                update.effective_message.reply_text(
+                    text,
+                    reply_markup=InlineKeyboardMarkup(keyboard),
+                    parse_mode="HTML",
+                )
+            else:
+                update.effective_message.reply_text(text, parse_mode="HTML")
+        except Exception:
+            if keyboard:
+                update.effective_message.reply_text(
+                    text, reply_markup=InlineKeyboardMarkup(keyboard)
+                )
+            else:
+                update.effective_message.reply_text(text)
+
+    def update_existing_message(self, update, context, text, keyboard=[]):
         if len(text) > max_length_message:
             self.generate_log(f"Message too long: {text}", "DEBUG")
             list_of_messages = self.split_message_into_list(text)
@@ -399,18 +416,18 @@ class Telegram(plugins.Plugin):
                     update.effective_message.reply_text(response)
                     counter = 0
                     sleep(60)
-                self.update_existing_message(update, message, keyboard)
+                self.update_existing_message(update, context, message, keyboard)
         else:
             self.generate_log(f"Sending message: {text}", "DEBUG")
+            go_back_button = [
+                InlineKeyboardButton("📲 Open Menu", callback_data="start"),
+            ]
+            if keyboard != main_menu and go_back_button not in keyboard:
+                # Add back button if the keyboard is not the main menu and the keyboard does not have the back button
+                keyboard.append(go_back_button)
             try:
                 old_message = update.callback_query
                 old_message.answer()
-                go_back_button = [
-                    InlineKeyboardButton("📲 Open Menu", callback_data="start"),
-                ]
-                if keyboard != main_menu and go_back_button not in keyboard:
-                    # Add back button if the keyboard is not the main menu and the keyboard does not have the back button
-                    keyboard.append(go_back_button)
                 old_message.edit_message_text(
                     text=text,
                     reply_markup=InlineKeyboardMarkup(keyboard),
@@ -418,23 +435,9 @@ class Telegram(plugins.Plugin):
                 )
                 # Reset keyboard
                 keyboard = []
-            except Exception:
-                try:
-                    if keyboard:
-                        update.effective_message.reply_text(
-                            text,
-                            reply_markup=InlineKeyboardMarkup(keyboard),
-                            parse_mode="HTML",
-                        )
-                    else:
-                        update.effective_message.reply_text(text, parse_mode="HTML")
-                except:
-                    if keyboard:
-                        update.effective_message.reply_text(
-                            text, reply_markup=InlineKeyboardMarkup(keyboard)
-                        )
-                    else:
-                        update.effective_message.reply_text(text)
+            except Exception as e:
+                self.handle_exception(update, None, e)
+                self.send_new_message(update, text, keyboard)
 
     def run_as_user(self, cmd, user):
         uid = pwd.getpwnam(user).pw_uid
@@ -446,7 +449,7 @@ class Telegram(plugins.Plugin):
     def bot_update(self, update, context):
         self.generate_log("Updating bot...", "INFO")
         response = "🆙 Updating bot..."
-        self.update_existing_message(update, response)
+        self.update_existing_message(update, context, response)
         chat_id = update.effective_user["id"]
         context.bot.send_chat_action(chat_id=chat_id, action="upload_document")
         try:
@@ -521,7 +524,7 @@ class Telegram(plugins.Plugin):
 
         # Send a message indicating success
         response = "✅ Bot updated <b>successfully!</b>"
-        self.update_existing_message(update, response)
+        self.update_existing_message(update, context, response)
         return
 
     def take_screenshot(self, agent, update, context):
@@ -548,7 +551,7 @@ class Telegram(plugins.Plugin):
                 context.bot.send_photo(chat_id=update.effective_chat.id, photo=photo)
 
             response = "✅ Screenshot taken and sent!"
-            self.update_existing_message(update, response)
+            self.update_existing_message(update, context, response)
         except Exception as e:
             self.handle_exception(update, context, e)
 
@@ -565,7 +568,7 @@ class Telegram(plugins.Plugin):
         ]
 
         text = "⚠️  This will restart the device, not the daemon.\nSSH or bluetooth will be interrupted\nPlease select an option:"
-        self.update_existing_message(update, text, keyboard)
+        self.update_existing_message(update, context, text, keyboard)
         return
 
     def reboot_mode(self, mode, update, context):
@@ -578,7 +581,7 @@ class Telegram(plugins.Plugin):
         try:
             response = reboot_text
             self.generate_log(reboot_text, "WARNING")
-            self.update_existing_message(update, response)
+            self.update_existing_message(update, context, response)
 
             if view.ROOT:
                 view.ROOT.on_custom("Rebooting...")
@@ -603,7 +606,7 @@ class Telegram(plugins.Plugin):
 
     def shutdown(self, update, context):
         response = "📴 Shutting down <b>now</b>..."
-        self.update_existing_message(update, response)
+        self.update_existing_message(update, context, response)
         self.generate_log("shutting down...", "WARNING")
 
         try:
@@ -623,7 +626,7 @@ class Telegram(plugins.Plugin):
             self.handle_exception(update, context, e)
         return
 
-    def soft_restart(self, update):
+    def soft_restart(self, update, context):
         keyboard = [
             [
                 InlineKeyboardButton(
@@ -636,13 +639,13 @@ class Telegram(plugins.Plugin):
         ]
 
         text = "⚠️  This will restart the daemon, not the device.\nSSH or bluetooth will not be interrupted\nPlease select an option:"
-        self.update_existing_message(update, text, keyboard)
+        self.update_existing_message(update, context, text, keyboard)
         return
 
     def soft_restart_mode(self, mode, update, context):
         self.generate_log(f"restarting in {mode} mode ...")
         response = f"🔃 Restarting in <b>{mode}</b> mode..."
-        self.update_existing_message(update, response)
+        self.update_existing_message(update, context, response)
 
         if view.ROOT:
             view.ROOT.on_custom(f"Restarting daemon to {mode}")
@@ -670,7 +673,7 @@ class Telegram(plugins.Plugin):
         response = (
             f"⏰ Uptime: {uptime_hours} hours and {uptime_remaining_minutes} minutes"
         )
-        self.update_existing_message(update, response)
+        self.update_existing_message(update, context, response)
 
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
@@ -722,7 +725,7 @@ class Telegram(plugins.Plugin):
 
         if not potfiles_list:
             self.update_existing_message(
-                text="⛔ No cracked potfile found.", update=update
+                text="⛔ No cracked potfile found.", context=context, update=update
             )
             return
 
@@ -731,7 +734,7 @@ class Telegram(plugins.Plugin):
             chunks = self.format_handshake_pot_files(file_path)
             if not chunks or not any(chunk.strip() for chunk in chunks):
                 self.update_existing_message(
-                    text="The cracked potfile is empty.", update=update
+                    text="The cracked potfile is empty.", context=context, update=update
                 )
             else:
                 self.send_sticker(
@@ -768,7 +771,7 @@ class Telegram(plugins.Plugin):
 
         response = f"🤝 Total handshakes captured: <b>{count}</b>"
         self.send_sticker(update, context, random.choice(stickers_handshake_or_wpa))
-        self.update_existing_message(update, response)
+        self.send_new_message(update, context, response)
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
             self.terminate_program()
@@ -811,7 +814,7 @@ class Telegram(plugins.Plugin):
 
     def comming_soon(self, update, context):
         response = "🚧 Comming soon..."
-        self.update_existing_message(update, response)
+        self.update_existing_message(update, context, response)
         return
 
     def join_context_args(self, context):
@@ -830,7 +833,7 @@ class Telegram(plugins.Plugin):
                 response = f"🔠 ROT13: <code>{rot13_text}</code>"
             else:
                 response = "⛔ No text provided to encode/decode with ROT13.\nUsage: /rot13 <code>text</code>"
-            self.update_existing_message(update, response)
+            self.update_existing_message(update, context, response)
         except Exception as e:
             self.handle_exception(update, context, e)
         return
@@ -844,7 +847,7 @@ class Telegram(plugins.Plugin):
                 response = f"🔠 Base64: <code>{base64_text}</code>"
             else:
                 response = "⛔ No text provided to decode from Base64.\nUsage: /debase64 <code>base64 encode text</code>"
-            self.update_existing_message(update, response)
+            self.update_existing_message(update, context, response)
         except Exception as e:
             self.handle_exception(update, context, e)
         return
@@ -858,7 +861,7 @@ class Telegram(plugins.Plugin):
                 response = f"🔠 Base64: <code>{base64_text}</code>"
             else:
                 response = "⛔ No text provided to encode to Base64.\nUsage: /base64 <code>text to base64 encode</code>"
-            self.update_existing_message(update, response)
+            self.update_existing_message(update, context, response)
         except Exception as e:
             self.handle_exception(update, context, e)
         return
@@ -886,7 +889,7 @@ class Telegram(plugins.Plugin):
                 response = f"🔠 ~>$: <code>{args}</code>\n\n📜 ~>$: <code>{self.sanitize_text_to_send(output)}</code>"
             else:
                 response = "⛔ No command provided to execute.\nUsage: /cmd <code>command</code>"
-            self.update_existing_message(update, response)
+            self.update_existing_message(update, context, response)
         except Exception as e:
             self.handle_exception(update, context, e)
         return
@@ -906,7 +909,7 @@ class Telegram(plugins.Plugin):
                     self.generate_log(response, "ERROR")
             else:
                 response = "⛔ No process id provided to kill.\nUsage: /kill_ps <code>process_id</code>"
-            self.update_existing_message(update, response)
+            self.update_existing_message(update, context, response)
         except Exception as e:
             self.handle_exception(update, context, e)
         return
@@ -926,7 +929,7 @@ class Telegram(plugins.Plugin):
                     self.generate_log(response, "ERROR")
             else:
                 response = "⛔ No process name provided to kill.\nUsage: /kill_ps_name <code>process_name</code>"
-            self.update_existing_message(update, response)
+            self.update_existing_message(update, context, response)
         except Exception as e:
             self.handle_exception(update, context, e)
         return
@@ -972,7 +975,7 @@ class Telegram(plugins.Plugin):
 /soft_restart_to_manual - Restart the daemon to manual mode
 /soft_restart_to_auto - Restart the daemon to auto mode
         """
-        self.update_existing_message(update, list_of_commands_with_descriptions)
+        self.update_existing_message(update, context, list_of_commands_with_descriptions)
         return
 
     def on_internet_available(self, agent):
@@ -1124,7 +1127,7 @@ class Telegram(plugins.Plugin):
 
     def handle_memtemp(self, agent, update, context):
         reply = f"Memory Usage: {int(pwnagotchi.mem_usage() * 100)}%\n\nCPU Load: {int(pwnagotchi.cpu_load() * 100)}%\n\nCPU Temp: {pwnagotchi.temperature()}c"
-        self.update_existing_message(update, reply)
+        self.update_existing_message(update, context, reply)
         return
 
     def create_backup(self, agent, update, context):
@@ -1177,7 +1180,7 @@ class Telegram(plugins.Plugin):
         ]
 
         response = f"✅ Backup created and moved successfully to <code>/home/pi</code>.\nFile size: <b>{file_size} MB</b>"
-        self.update_existing_message(update, response, keyboard)
+        self.update_existing_message(update, context, response, keyboard)
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
             self.terminate_program()
