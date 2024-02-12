@@ -375,15 +375,20 @@ class Telegram(plugins.Plugin):
 
     def split_message_into_list(self, text):
         list_of_messages = []
+        logging.info(f"Splitting message: {text}")
         while len(text) > max_length_message:
             list_of_messages.append(text[:max_length_message])
             text = text[max_length_message:]
         return list_of_messages
 
     def update_existing_message(self, update, text, keyboard=[]):
+        # TODO: Move log to debug
         if len(text) >= max_length_message:
+            logging.info(f"Message too long: {text}")
             list_of_messages = self.split_message_into_list(text)
+            logging.info(f"List of messages: {list_of_messages}")
             counter = 0
+            logging.info(f"Sending message: {text}")
             for message in list_of_messages:
                 counter += 1
                 if counter >= max_messages_per_minute:
