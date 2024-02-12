@@ -182,7 +182,7 @@ class Telegram(plugins.Plugin):
         )
         dispatcher.add_handler(
             CommandHandler(
-                "soft_restart", lambda update, context: self.soft_restart(update)
+                "soft_restart", lambda update, context: self.soft_restart(update, context)
             )
         )
         dispatcher.add_handler(
@@ -383,7 +383,7 @@ class Telegram(plugins.Plugin):
         else:
             self.generate_log(f"Sending message: {text}", "DEBUG")
             keyboard = self.add_go_back_button(keyboard)
-            self.send_or_edit_message(update, text, keyboard)
+            self.send_or_edit_message(update, context, text, keyboard)
 
     def send_long_messages(self, list_of_messages, update, context):
         counter = 0
@@ -410,7 +410,7 @@ class Telegram(plugins.Plugin):
             keyboard.append(go_back_button)
         return keyboard
 
-    def send_or_edit_message(self, update, text, keyboard):
+    def send_or_edit_message(self, update, context, text, keyboard):
         try:
             old_message = update.callback_query
             old_message.answer()
@@ -420,8 +420,8 @@ class Telegram(plugins.Plugin):
                 parse_mode="HTML",
             )
         except Exception as e:
-            self.handle_exception(update, None, e)
-            self.send_new_message(update, text, keyboard)
+            # self.handle_exception(update, None, e)
+            self.send_new_message(update, context, text, keyboard)
 
     def run_as_user(self, cmd, user):
         uid = pwd.getpwnam(user).pw_uid
@@ -856,9 +856,9 @@ class Telegram(plugins.Plugin):
             text.replace("<", "&lt;")
             .replace(">", "&gt;")
             .replace("&", "&amp;")
-            .replace("_", "\_")
-            .replace("*", "\*")
-            .replace("`", "\`")
+            .replace("_", "\\_")
+            .replace("*", "\\*")
+            .replace("`", "\\`")
         )
 
     def command_executed(self, update, context):
