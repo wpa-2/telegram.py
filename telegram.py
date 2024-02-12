@@ -5,6 +5,8 @@ import telegram
 import subprocess
 import pwnagotchi
 import random
+import codecs
+import base64
 import toml
 from time import sleep
 from pwnagotchi import fs
@@ -770,15 +772,19 @@ class Telegram(plugins.Plugin):
         self.update_existing_message(update, response)
         return
 
+    def join_context_args(self, context):
+        args = context.args
+        if args:
+            return " ".join(args[:])
+        else:
+            return None
+
+
     def rot13(self, agent, update, context):
         """Encode/Decode ROT13"""
-        import codecs
-        args = context.args
-
-        # Check if an argument was provided after the /start command
+        args = self.join_context_args(context)
         if args:
-            arg = " ".join(args[:])
-            rot13_text = codecs.encode(arg, "rot_13")
+            rot13_text = codecs.encode(args, "rot_13")
             response = f"🔠 ROT13: <code>{rot13_text}</code>"
         else:
             response = "⛔ No text provided to encode/decode with ROT13.\nUsage: /rot13 <code>text</code>"
@@ -787,23 +793,73 @@ class Telegram(plugins.Plugin):
 
     def debase64(self, agent, update, context):
         """Decode Base64"""
-        self.comming_soon(update, context)
+        args = self.join_context_args(context)
+        if args:
+            base64_text = base64.b64decode(args).decode()
+            response = f"🔠 Base64: <code>{base64_text}</code>"
+        else:
+            response = "⛔ No text provided to decode from Base64.\nUsage: /debase64 <code>base64 encode text</code>"
+        self.update_existing_message(update, response)
+        return
 
     def base64(self, agent, update, context):
         """Encode Base64"""
-        self.comming_soon(update, context)
+        args = self.join_context_args(context)
+
+        if args:
+            base64_text = base64.b64encode(args.encode()).decode()
+            response = f"🔠 Base64: <code>{base64_text}</code>"
+        else:
+            response = "⛔ No text provided to encode to Base64.\nUsage: /base64 <code>text to base64 encode</code>"
+        self.update_existing_message(update, response)
+        return
 
     def command_executed(self, update, context):
         """Execute a command on the pwnagotchi"""
-        self.comming_soon(update, context)
+        args = self.join_context_args(context)
+
+        if args:
+            # Execute the  args provided and send the output to the chat
+            output = subprocess.check_output(args, shell=True).decode("utf-8")
+            response = f"🔠 ~>$: <code>{args}</code>\n\n📜 ~>$: <code>{output}</code>"
+        else:
+            response = "⛔ No command provided to execute.\nUsage: /cmd <code>command</code>"
+        self.update_existing_message(update, response)
+        return
 
     def kill_ps(self, agent, update, context):
         """Kill a process by id"""
-        self.comming_soon(update, context)
+        args = self.join_context_args(context)
+        if args:
+            try:
+                subprocess.run(["sudo", "kill", "-9", args])
+                response = f"🔠 Process <code>{args}</code> killed."
+            except subprocess.CalledProcessError as e:
+                response = f"⛔ Error killing process <code>{args}</code>: <code>{e}</code>"
+            except Exception as e:
+                response = f"⛔ Unexpected error killing process <code>{args}</code>: <code>{e}</code>"
+                self.generate_log(response, "ERROR")
+        else:
+            response = "⛔ No process id provided to kill.\nUsage: /kill_ps <code>process_id</code>"
+        self.update_existing_message(update, response)
+        return
 
     def kill_ps_name(self, agent, update, context):
         """Kill a process by name"""
-        self.comming_soon(update, context)
+        args = self.join_context_args(context)
+        if args:
+            try:
+                subprocess.run(["sudo", "pkill", args])
+                response = f"🔠 Process <code>{args}</code> killed."
+            except subprocess.CalledProcessError as e:
+                response = f"⛔ Error killing process <code>{args}</code>: <code>{e}</code>"
+            except Exception as e:
+                response = f"⛔ Unexpected error killing process <code>{args}</code>: <code>{e}</code>"
+                self.generate_log(response, "ERROR")
+        else:
+            response = "⛔ No process name provided to kill.\nUsage: /kill_ps_name <code>process_name</code>"
+        self.update_existing_message(update, response)
+        return
 
     def help(self, update, context):
         list_of_commands_with_descriptions = """
