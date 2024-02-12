@@ -5,6 +5,7 @@ import telegram
 import subprocess
 import pwnagotchi
 import random
+import toml
 from time import sleep
 from pwnagotchi import fs
 from pwnagotchi.ui import view
@@ -83,6 +84,13 @@ class Telegram(plugins.Plugin):
         self.num_tasks = 8  # Increased for the new pwnkill task
         self.updater = None
         self.start_menu_sent = False
+        # Read toml file
+        try:
+            with open('/etc/pwnagotchi/config.toml', 'r') as f:
+                config = toml.load(f)
+                self.screen_rotation = int(config['ui']['display']['rotation'])
+        except:
+            self.screen_rotation = 0
 
     def on_agent(self, agent):
         if "auto_start" in self.options and self.options["auto_start"]:
@@ -453,7 +461,7 @@ class Telegram(plugins.Plugin):
             # Capture the screen rotation value and rotate the image (x degrees) before saving
             # If there is no rotation value, the default value is 0
 
-            rotation_degree = self.options.get("rotation", 0)
+            rotation_degree = self.screen_rotation
 
             rotated_screenshot = screenshot.rotate(rotation_degree)
 
