@@ -389,7 +389,7 @@ class Telegram(plugins.Plugin):
             self.generate_log(f"List of messages: {list_of_messages}", "DEBUG")
             counter = 0
             for message in list_of_messages:
-                self.generate_log(f"Sending message: {message}", "INFO")
+                self.generate_log(f"Sending message: {message}", "DEBUG")
                 counter += 1
                 if counter >= max_messages_per_minute - 1:
                     response = "💤 Sleeping for <b>60</b> seconds to avoid <i>flooding</i> the chat..."
@@ -398,7 +398,7 @@ class Telegram(plugins.Plugin):
                     sleep(60)
                 self.update_existing_message(update, message, keyboard)
         else:
-            self.generate_log(f"Sending message: {text}", "INFO")
+            self.generate_log(f"Sending message: {text}", "DEBUG")
             try:
                 old_message = update.callback_query
                 old_message.answer()
@@ -453,7 +453,7 @@ class Telegram(plugins.Plugin):
             # Check if the telegram-bot folder exists
             if not os.path.exists("telegram-bot"):
                 # Clone the telegram-bot repository if it doesn't exist
-                self.generate_log("Cloning telegram-bot repository...", "INFO")
+                self.generate_log("Cloning telegram-bot repository...", "DEBUG")
                 subprocess.run(
                     [
                         "git",
