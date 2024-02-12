@@ -32,7 +32,7 @@ main_menu = [
     [
         InlineKeyboardButton("🤝 Handshake Count", callback_data="handshake_count"),
         InlineKeyboardButton(
-            "🔓 Read WPA-Sec Cracked", callback_data="read_wpa_sec_cracked"
+            "🔓 Read Potfiles Cracked", callback_data="read_potfiles_cracked"
         ),
         InlineKeyboardButton(
             "📬 Fetch Pwngrid Inbox", callback_data="fetch_pwngrid_inbox"
@@ -139,8 +139,8 @@ class Telegram(plugins.Plugin):
         )
         dispatcher.add_handler(
             CommandHandler(
-                "read_wpa_sec_cracked",
-                lambda update, context: self.read_wpa_sec_cracked(
+                "read_potfiles_cracked",
+                lambda update, context: self.read_potfiles_cracked(
                     agent, update, context
                 ),
             )
@@ -284,8 +284,8 @@ class Telegram(plugins.Plugin):
                 self.shutdown(update, context)
             elif query.data == "uptime":
                 self.uptime(agent, update, context)
-            elif query.data == "read_wpa_sec_cracked":
-                self.read_wpa_sec_cracked(agent, update, context)
+            elif query.data == "read_potfiles_cracked":
+                self.read_potfiles_cracked(agent, update, context)
             elif query.data == "handshake_count":
                 self.handshake_count(agent, update, context)
             elif query.data == "fetch_pwngrid_inbox":
@@ -628,47 +628,63 @@ class Telegram(plugins.Plugin):
             messages_list = []
             message = ""
 
-            with open(file_path, "r") as file:
-                content = file.readlines()
-                for line in content:
-                    pwned = line.split(":")[2:]
-                    if len(message + line) > 4096:
-                        messages_list.append(message)
-                        message = ""
-                    # This code formatting allow us to copy the code block with one tap
-                    # SSID:password
-                    message += ":<code>".join(pwned)
-                    message = message + "</code>"
-                messages_list.append(message)
+            try:
+                with open(file_path, "r") as file:
+                    content = file.readlines()
+                    for line in content:
+                        pwned = line.split(":")[2:]
+                        if len(message + line) > 4096:
+                            messages_list.append(message)
+                            message = ""
+                        # This code formatting allow us to copy the code block with one tap
+                        # SSID:password
+                        message += ":<code>".join(pwned)
+                        message = message + "</code>"
+                    messages_list.append(message)
+            except FileNotFoundError:
+                return [f"⛔ The {file_path} does not exists."]
+            except:
+                return ["⛔ Unexpected error reading file."]
             return messages_list
 
         except subprocess.CalledProcessError as e:
             return [f"⛔ Error reading file: {e}"]
 
-    def read_wpa_sec_cracked(self, agent, update, context):
-        # TODO: Read every .potfile available
-        file_path = "/root/handshakes/wpa-sec.cracked.potfile"
-        chunks = self.format_handshake_pot_files(file_path)
-        if not chunks or not any(chunk.strip() for chunk in chunks):
-            self.update_existing_message(
-                text="The wpa-sec.cracked.potfile is empty.", update=update
-            )
-        else:
-            self.send_sticker(update, context, random.choice(stickers_handshake_or_wpa))
-            chat_id = update.effective_user["id"]
-            context.bot.send_chat_action(chat_id, "typing")
-            import time
+    def read_potfiles_cracked(self, agent, update, context):
 
-            message_counter = 0
-            for chunk in chunks:
-                if message_counter >= 20:
-                    response = "💤 Sleeping for <b>60</b> seconds to avoid <i>flooding</i> the chat..."
-                    update.effective_message.reply_text(response)
-                    time.sleep(60)
-                    context.bot.send_chat_action(chat_id, "typing", timeout=60)
-                    message_counter = 0
-                update.effective_message.reply_text(chunk, parse_mode="HTML")
-                message_counter += 1
+        potfiles_dir = "/root/handshakes"
+        potfiles_list = os.listdir(potfiles_dir)
+        potfiles_list = [file for file in potfiles_list if file.endswith(".potfile")]
+
+        if not potfiles_list:
+            self.update_existing_message(
+                text="⛔ No cracked potfile found.", update=update
+            )
+            return
+
+        for potfile in potfiles_list:
+            file_path = f"{potfiles_dir}/{potfile}"
+            chunks = self.format_handshake_pot_files(file_path)
+            if not chunks or not any(chunk.strip() for chunk in chunks):
+                self.update_existing_message(
+                    text="The cracked potfile is empty.", update=update
+                )
+            else:
+                self.send_sticker(update, context, random.choice(stickers_handshake_or_wpa))
+                chat_id = update.effective_user["id"]
+                context.bot.send_chat_action(chat_id, "typing")
+                import time
+
+                message_counter = 0
+                for chunk in chunks:
+                    if message_counter >= 20:
+                        response = "💤 Sleeping for <b>60</b> seconds to avoid <i>flooding</i> the chat..."
+                        update.effective_message.reply_text(response)
+                        time.sleep(60)
+                        context.bot.send_chat_action(chat_id, "typing", timeout=60)
+                        message_counter = 0
+                    update.effective_message.reply_text(chunk, parse_mode="HTML")
+                    message_counter += 1
 
         self.completed_tasks += 1
         if self.completed_tasks == self.num_tasks:
@@ -787,7 +803,7 @@ class Telegram(plugins.Plugin):
 /send_backup - Send the backup if it is available
 /fetch_pwngrid_inbox - Fetch the Pwngrid inbox
 /handshake_count - Get the handshake count
-/read_wpa_sec_cracked - Read the wpa-sec.cracked.potfile
+/read_potfiles_cracked - Read the all the cracked .potfile's
 /take_screenshot - Take a screenshot
 /create_backup - Create a backup
 
@@ -831,8 +847,8 @@ class Telegram(plugins.Plugin):
                         command="handshake_count", description="Get the handshake count"
                     ),
                     BotCommand(
-                        command="read_wpa_sec_cracked",
-                        description="Read the wpa-sec.cracked.potfile",
+                        command="read_potfiles_cracked",
+                        description="Read the every cracked .potfile",
                     ),
                     BotCommand(
                         command="fetch_pwngrid_inbox",
