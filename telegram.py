@@ -306,9 +306,7 @@ class Telegram(plugins.Plugin):
                 ),
                 "send_backup": self.send_backup,
                 "bot_update": self.bot_update,
-                "create_backup": lambda: self.last_backup.__setitem__(
-                    None, self.create_backup(agent, update, context)
-                ),
+                "create_backup": self.last_backup
             }
 
             action = action_map.get(str(query.data))
@@ -1232,7 +1230,7 @@ class Telegram(plugins.Plugin):
             self.completed_tasks += 1
             if self.completed_tasks == self.num_tasks:
                 self.terminate_program()
-            return backup_file_name
+            self.last_backup = backup_file_name
 
     def send_backup(self, agent, update, context):
         if update.effective_chat.id == int(self.options.get("chat_id")):
