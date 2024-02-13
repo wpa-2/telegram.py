@@ -183,7 +183,7 @@ class Telegram(plugins.Plugin):
         dispatcher.add_handler(
             CommandHandler(
                 "soft_restart",
-                lambda update, context: self.soft_restart(update, context),
+                lambda update, context: self.soft_restart(agent, update, context),
             )
         )
         dispatcher.add_handler(
@@ -208,7 +208,7 @@ class Telegram(plugins.Plugin):
         )
         dispatcher.add_handler(
             CommandHandler(
-                "bot_update", lambda update, context: self.bot_update(update, context)
+                "bot_update", lambda update, context: self.bot_update(agent, update, context)
             )
         )
         dispatcher.add_handler(
@@ -462,7 +462,7 @@ class Telegram(plugins.Plugin):
         os.setuid(0)
         return
 
-    def bot_update(self, update, context):
+    def bot_update(self, agent, update, context):
         if update.effective_chat.id == int(self.options.get("chat_id")):
             self.generate_log("Updating bot...", "INFO")
             response = "🆙 Updating bot..."
@@ -647,7 +647,7 @@ class Telegram(plugins.Plugin):
                 self.handle_exception(update, context, e)
             return
 
-    def soft_restart(self, update, context):
+    def soft_restart(self, agent, update, context):
         if update.effective_chat.id == int(self.options.get("chat_id")):
             keyboard = [
                 [
