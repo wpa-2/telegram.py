@@ -740,7 +740,7 @@ class Telegram(plugins.Plugin):
             chunks = self.format_handshake_pot_files(file_path)
             if not chunks or not any(chunk.strip() for chunk in chunks):
                 self.update_existing_message(
-                    text="The cracked potfile is empty.", context=context, update=update
+                    text=f"The {potfile} file is empty.", context=context, update=update
                 )
             else:
                 self.send_sticker(
@@ -754,11 +754,11 @@ class Telegram(plugins.Plugin):
                 for chunk in chunks:
                     if message_counter >= max_messages_per_minute:
                         response = "💤 Sleeping for <b>60</b> seconds to avoid <i>flooding</i> the chat..."
-                        update.effective_message.reply_text(response)
+                        self.send_new_message(update=update, context=context, text=response)
                         time.sleep(60)
                         context.bot.send_chat_action(chat_id, "typing", timeout=60)
                         message_counter = 0
-                    update.effective_message.reply_text(chunk, parse_mode="HTML")
+                    self.send_new_message(update=update, context=context, text=chunk)
                     message_counter += 1
 
         self.completed_tasks += 1
