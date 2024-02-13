@@ -328,15 +328,14 @@ class Telegram(plugins.Plugin):
 
     def generate_log(self, text, type="INFO"):
         """Create a log with the plugin name"""
-        if update.effective_chat.id == int(self.options.get("chat_id")):
-            log_map = {
-                "INFO": logging.info,
-                "ERROR": logging.error,
-                "WARNING": logging.warning,
-                "DEBUG": logging.debug,
-            }
-            log = log_map.get(type, logging.info)
-            log(f"[TELEGRAM] {text}")
+        log_map = {
+            "INFO": logging.info,
+            "ERROR": logging.error,
+            "WARNING": logging.warning,
+            "DEBUG": logging.debug,
+        }
+        log = log_map.get(type, logging.info)
+        log(f"[TELEGRAM] {text}")
 
     def change_led(self, agent, update, context, mode="on"):
         # Write 0 or 255 to the led file to turn it off or on
@@ -436,13 +435,12 @@ class Telegram(plugins.Plugin):
             sleep(60)
 
     def add_open_menu_button(self, keyboard):
-        if update.effective_chat.id == int(self.options.get("chat_id")):
-            go_back_button = [
-                InlineKeyboardButton("📲 Open Menu", callback_data="start"),
-            ]
-            if keyboard != main_menu and go_back_button not in keyboard:
-                keyboard.append(go_back_button)
-            return keyboard
+        go_back_button = [
+            InlineKeyboardButton("📲 Open Menu", callback_data="start"),
+        ]
+        if keyboard != main_menu and go_back_button not in keyboard:
+            keyboard.append(go_back_button)
+        return keyboard
 
     def send_or_edit_message(self, update, context, text, keyboard):
         if update.effective_chat.id == int(self.options.get("chat_id")):
@@ -458,12 +456,11 @@ class Telegram(plugins.Plugin):
                 self.send_new_message(update, context, text, keyboard)
 
     def run_as_user(self, cmd, user):
-        if update.effective_chat.id == int(self.options.get("chat_id")):
-            uid = pwd.getpwnam(str(user)).pw_uid
-            os.setuid(uid)
-            os.system(cmd)
-            os.setuid(0)
-            return
+        uid = pwd.getpwnam(str(user)).pw_uid
+        os.setuid(uid)
+        os.system(cmd)
+        os.setuid(0)
+        return
 
     def bot_update(self, update, context):
         if update.effective_chat.id == int(self.options.get("chat_id")):
