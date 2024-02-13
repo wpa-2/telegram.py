@@ -276,8 +276,7 @@ class Telegram(plugins.Plugin):
         if update.effective_chat.id == int(self.options.get("chat_id")):
             bot_name = str(self.options.get("bot_name", "Pwnagotchi"))
             response = f"🖖 Welcome to <b>{bot_name}</b>\n\nPlease select an option:"
-            reply_markup = InlineKeyboardMarkup(main_menu)
-            self.send_new_message(update, context, response, reply_markup)
+            self.send_new_message(update, context, response, main_menu)
         return
 
     def button_handler(self, agent, update, context):
@@ -371,14 +370,11 @@ class Telegram(plugins.Plugin):
         update,
         context,
         text: str,
-        keyboard: InlineKeyboardMarkup = InlineKeyboardMarkup([[]]),
+        keyboard: list = [],
     ):
         try:
-            reply_kwargs = {"parse_mode": "HTML"}
             keyboard = self.add_open_menu_button(keyboard)
-            if keyboard:
-                reply_kwargs["reply_markup"] = keyboard
-            update.effective_message.reply_text(text, **reply_kwargs)
+            update.effective_message.reply_text(text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(keyboard))
         except Exception:
             try:
                 update.effective_message.reply_text(text)
@@ -447,7 +443,7 @@ class Telegram(plugins.Plugin):
                 parse_mode="HTML",
             )
         except Exception:
-            self.send_new_message(update, context, text, InlineKeyboardMarkup(keyboard))
+            self.send_new_message(update, context, text, keyboard)
 
     def run_as_user(self, cmd, user):
         uid = pwd.getpwnam(str(user)).pw_uid
