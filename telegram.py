@@ -749,7 +749,6 @@ class Telegram(plugins.Plugin):
                 chat_id = update.effective_user["id"]
                 context.bot.send_chat_action(chat_id, "typing")
                 import time
-
                 message_counter = 0
                 for chunk in chunks:
                     if message_counter >= max_messages_per_minute:
@@ -758,7 +757,7 @@ class Telegram(plugins.Plugin):
                         time.sleep(60)
                         context.bot.send_chat_action(chat_id, "typing", timeout=60)
                         message_counter = 0
-                    self.send_new_message(update=update, context=context, text=chunk)
+                    self.send_new_message(update=update, context=context, text=f"<b>{potfile}</b>:\n{chunk}")
                     message_counter += 1
 
         self.completed_tasks += 1
@@ -809,13 +808,15 @@ class Telegram(plugins.Plugin):
         return "\n".join(formatted_output)
 
     def handle_pwngrid_inbox(self, agent, update, context):
+        chat_id = update.effective_chat.id
+        context.bot.send_chat_action(chat_id, "typing")
         reply = self.fetch_inbox()
         if reply:
-            context.bot.send_message(chat_id=update.effective_chat.id, text=reply)
+            context.bot.send_message(chat_id=chat_id, text=reply)
         else:
             context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="No messages found in Pwngrid inbox.",
+                chat_id=chat_id,
+                text="📬 No messages found in Pwngrid inbox.",
             )
 
     def comming_soon(self, update, context):
