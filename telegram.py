@@ -127,7 +127,7 @@ class Telegram(plugins.Plugin):
         )
         dispatcher.add_handler(
             CommandHandler(
-                "shutdown", lambda update, context: self.shutdown(update, context)
+                "shutdown", lambda update, context: self.shutdown(agent, update, context)
             )
         )
         dispatcher.add_handler(
@@ -624,7 +624,7 @@ class Telegram(plugins.Plugin):
             except Exception as e:
                 self.handle_exception(update, context, e)
 
-    def shutdown(self, update, context):
+    def shutdown(self, agent, update, context):
         if update.effective_chat.id == int(self.options.get("chat_id")):
             response = "📴 Shutting down <b>now</b>..."
             self.update_existing_message(update, context, response)
