@@ -285,39 +285,34 @@ class Telegram(plugins.Plugin):
             query.answer()
 
             action_map = {
-                "reboot": self.reboot,
+                "reboot": lambda: self.reboot(update, context),
                 "reboot_to_manual": lambda: self.reboot_mode("MANUAL", update, context),
                 "reboot_to_auto": lambda: self.reboot_mode("AUTO", update, context),
-                "shutdown": self.shutdown,
-                "uptime": self.uptime,
-                "read_potfiles_cracked": self.read_potfiles_cracked,
-                "handshake_count": self.handshake_count,
-                "fetch_pwngrid_inbox": self.handle_pwngrid_inbox,
-                "read_memtemp": self.handle_memtemp,
-                "take_screenshot": self.take_screenshot,
-                "pwnkill": self.pwnkill,
-                "start": self.start,
-                "soft_restart": self.soft_restart,
-                "soft_restart_to_manual": lambda: self.soft_restart_mode(
-                    "MANUAL", update, context
-                ),
-                "soft_restart_to_auto": lambda: self.soft_restart_mode(
-                    "AUTO", update, context
-                ),
-                "send_backup": self.send_backup,
-                "bot_update": self.bot_update,
-                "create_backup": lambda: self.last_backup.__setitem__(
-                    None, self.create_backup(agent, update, context)
-                ),
+                "shutdown": lambda: self.shutdown(update, context),
+                "uptime": lambda: self.uptime(update, context),
+                "read_potfiles_cracked": lambda: self.read_potfiles_cracked(update, context),
+                "handshake_count": lambda: self.handshake_count(update, context),
+                "fetch_pwngrid_inbox": lambda: self.handle_pwngrid_inbox(update, context),
+                "read_memtemp": lambda: self.handle_memtemp(update, context),
+                "take_screenshot": lambda: self.take_screenshot(update, context),
+                "pwnkill": lambda: self.pwnkill(update, context),
+                "start": lambda: self.start(update, context),
+                "soft_restart": lambda: self.soft_restart(update, context),
+                "soft_restart_to_manual": lambda: self.soft_restart_mode("MANUAL", update, context),
+                "soft_restart_to_auto": lambda: self.soft_restart_mode("AUTO", update, context),
+                "send_backup": lambda: self.send_backup(update, context),
+                "bot_update": lambda: self.bot_update(update, context),
+                "create_backup": lambda: self.last_backup.__setitem__(None, self.create_backup(update, context)),
             }
 
             action = action_map.get(str(query.data))
             if action:
-                action(agent, update, context)
+                action()
 
             self.completed_tasks += 1
             if self.completed_tasks == self.num_tasks:
                 self.terminate_program()
+
 
     def handle_exception(self, update, context, e) -> None:
         if update.effective_chat.id == int(self.options.get("chat_id")):
