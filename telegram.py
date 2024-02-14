@@ -127,7 +127,8 @@ class Telegram(plugins.Plugin):
         )
         dispatcher.add_handler(
             CommandHandler(
-                "shutdown", lambda update, context: self.shutdown(agent, update, context)
+                "shutdown",
+                lambda update, context: self.shutdown(agent, update, context),
             )
         )
         dispatcher.add_handler(
@@ -208,7 +209,8 @@ class Telegram(plugins.Plugin):
         )
         dispatcher.add_handler(
             CommandHandler(
-                "bot_update", lambda update, context: self.bot_update(agent, update, context)
+                "bot_update",
+                lambda update, context: self.bot_update(agent, update, context),
             )
         )
         dispatcher.add_handler(
@@ -286,8 +288,8 @@ class Telegram(plugins.Plugin):
 
             action_map = {
                 "reboot": self.reboot,
-                "reboot_to_manual": lambda: self.reboot_mode("MANUAL", update, context),
-                "reboot_to_auto": lambda: self.reboot_mode("AUTO", update, context),
+                "reboot_to_manual": self.reboot_to_manual,
+                "reboot_to_auto": self.reboot_to_auto,
                 "shutdown": self.shutdown,
                 "uptime": self.uptime,
                 "read_potfiles_cracked": self.read_potfiles_cracked,
@@ -298,15 +300,11 @@ class Telegram(plugins.Plugin):
                 "pwnkill": self.pwnkill,
                 "start": self.start,
                 "soft_restart": self.soft_restart,
-                "soft_restart_to_manual": lambda: self.soft_restart_mode(
-                    "MANUAL", update, context
-                ),
-                "soft_restart_to_auto": lambda: self.soft_restart_mode(
-                    "AUTO", update, context
-                ),
+                "soft_restart_to_manual": self.soft_restart_to_manual,
+                "soft_restart_to_auto": self.soft_restart_to_auto,
                 "send_backup": self.send_backup,
                 "bot_update": self.bot_update,
-                "create_backup": self.last_backup
+                "create_backup": self.last_backup,
             }
 
             action = action_map.get(str(query.data))
@@ -486,7 +484,9 @@ class Telegram(plugins.Plugin):
                     )
 
                     # Add the repository as a safe directory as root
-                    self.generate_log("Adding telegram-bot repository as safe...", "DEBUG")
+                    self.generate_log(
+                        "Adding telegram-bot repository as safe...", "DEBUG"
+                    )
                     subprocess.run(
                         [
                             "git",
@@ -564,7 +564,9 @@ class Telegram(plugins.Plugin):
                 rotated_screenshot.save(picture_path, "png")
 
                 with open(picture_path, "rb") as photo:
-                    context.bot.send_photo(chat_id=update.effective_chat.id, photo=photo)
+                    context.bot.send_photo(
+                        chat_id=update.effective_chat.id, photo=photo
+                    )
 
                 response = "✅ Screenshot taken and sent!"
                 self.update_existing_message(update, context, response)
@@ -587,6 +589,14 @@ class Telegram(plugins.Plugin):
             text = "⚠️  This will restart the device, not the daemon.\nSSH or bluetooth will be interrupted\nPlease select an option:"
             self.update_existing_message(update, context, text, keyboard)
             return
+
+    def reboot_to_manual(self, agent, update, context):
+        if update.effective_chat.id == int(self.options.get("chat_id")):
+            self.reboot_mode(mode="MANUAL", update=update, context=context)
+
+    def reboot_to_auto(self, agent, update, context):
+        if update.effective_chat.id == int(self.options.get("chat_id")):
+            self.reboot_mode(mode="AUTO", update=update, context=context)
 
     def reboot_mode(self, mode, update, context):
         if update.effective_chat.id == int(self.options.get("chat_id")):
@@ -650,7 +660,8 @@ class Telegram(plugins.Plugin):
             keyboard = [
                 [
                     InlineKeyboardButton(
-                        "🤖 Restart to manual mode", callback_data="soft_restart_to_manual"
+                        "🤖 Restart to manual mode",
+                        callback_data="soft_restart_to_manual",
                     ),
                     InlineKeyboardButton(
                         "🛜 Restart to auto mode", callback_data="soft_restart_to_auto"
@@ -661,6 +672,14 @@ class Telegram(plugins.Plugin):
             text = "⚠️  This will restart the daemon, not the device.\nSSH or bluetooth will not be interrupted\nPlease select an option:"
             self.update_existing_message(update, context, text, keyboard)
             return
+
+    def soft_restart_to_manual(self, agent, update, context):
+        if update.effective_chat.id == int(self.options.get("chat_id")):
+            self.soft_restart_mode(mode="MANUAL", update=update, context=context)
+
+    def soft_restart_to_auto(self, agent, update, context):
+        if update.effective_chat.id == int(self.options.get("chat_id")):
+            self.soft_restart_mode(mode="AUTO", update=update, context=context)
 
     def soft_restart_mode(self, mode, update, context):
         if update.effective_chat.id == int(self.options.get("chat_id")):
@@ -692,9 +711,7 @@ class Telegram(plugins.Plugin):
             uptime_hours = int(uptime_minutes // 60)
             uptime_remaining_minutes = int(uptime_minutes % 60)
 
-            response = (
-                f"⏰ Uptime: {uptime_hours} hours and {uptime_remaining_minutes} minutes"
-            )
+            response = f"⏰ Uptime: {uptime_hours} hours and {uptime_remaining_minutes} minutes"
             self.update_existing_message(update, context, response)
 
             self.completed_tasks += 1
@@ -745,7 +762,9 @@ class Telegram(plugins.Plugin):
         if update.effective_chat.id == int(self.options.get("chat_id")):
             potfiles_dir = "/root/handshakes"
             potfiles_list = os.listdir(potfiles_dir)
-            potfiles_list = [file for file in potfiles_list if file.endswith(".potfile")]
+            potfiles_list = [
+                file for file in potfiles_list if file.endswith(".potfile")
+            ]
 
             if not potfiles_list:
                 self.update_existing_message(
@@ -758,7 +777,9 @@ class Telegram(plugins.Plugin):
                 chunks = self.format_handshake_pot_files(file_path)
                 if not chunks or not any(chunk.strip() for chunk in chunks):
                     self.update_existing_message(
-                        text=f"The {potfile} file is empty.", context=context, update=update
+                        text=f"The {potfile} file is empty.",
+                        context=context,
+                        update=update,
                     )
                 else:
                     self.send_sticker(
@@ -1177,7 +1198,9 @@ class Telegram(plugins.Plugin):
 
     def create_backup(self, agent, update, context):
         if update.effective_chat.id == int(self.options.get("chat_id")):
-            context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
+            context.bot.send_chat_action(
+                chat_id=update.effective_chat.id, action="typing"
+            )
             backup_files = [
                 "/root/brain.json",
                 "/root/.api-report.json",
