@@ -140,7 +140,7 @@ remove_dependencies
 echo "[ + ] Installing new dependencies..."
 install_dependencies
 echo "[ + ] Creating symbolic link to ${installation_dir}"
-ln -sf "$(pwd)/telegram.py" "${installation_dir//\"/}/telegram-py"
+ln -sf "$(pwd)/telegram.py" "${installation_dir//\"/}/telegram.py"
 user_sleep
 echo "[ + ] Backing up configuration files..."
 cp "${CONFIG_FILE}" "${CONFIG_FILE}.bak"
