@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 CONFIG_FILE="/etc/pwnagotchi/config.toml"
 
 function user_sleep() {
