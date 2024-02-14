@@ -1057,72 +1057,72 @@ class Telegram(plugins.Plugin):
             bot.set_my_commands(
                 commands=[
                     # Add all the buttons actions as commands
-                    BotCommand(command="menu", description="See buttons menu"),
+                    BotCommand(command="menu", description="📜 See buttons menu"),
                     BotCommand(
                         command="reboot_to_manual",
-                        description="Reboot the device to manual mode",
+                        description="🔄🤖 Reboot the device to manual mode",
                     ),
                     BotCommand(
                         command="reboot_to_auto",
-                        description="Reboot the device to auto mode",
+                        description="🔄🛜 Reboot the device to auto mode",
                     ),
-                    BotCommand(command="shutdown", description="Shutdown the device"),
+                    BotCommand(command="shutdown", description="📴 Shutdown the device"),
                     BotCommand(
-                        command="uptime", description="Get the uptime of the device"
+                        command="uptime", description="⏰ Get the uptime of the device"
                     ),
                     BotCommand(
-                        command="handshake_count", description="Get the handshake count"
+                        command="handshake_count", description="🤝 Get the handshake count"
                     ),
                     BotCommand(
                         command="read_potfiles_cracked",
-                        description="Read the every cracked .potfile",
+                        description="🔓 Read the every cracked .potfile",
                     ),
                     BotCommand(
                         command="fetch_pwngrid_inbox",
-                        description="Fetch the Pwngrid inbox",
+                        description="📬 Fetch the Pwngrid inbox",
                     ),
                     BotCommand(
                         command="read_memtemp",
-                        description="Read memory and temperature",
+                        description="🧠 Read memory and temperature",
                     ),
                     BotCommand(
-                        command="take_screenshot", description="Take a screenshot"
+                        command="take_screenshot", description="🎨 Take a screenshot"
                     ),
-                    BotCommand(command="create_backup", description="Create a backup"),
-                    BotCommand(command="bot_update", description="Update the bot"),
-                    BotCommand(command="pwnkill", description="Kill the daemon"),
+                    BotCommand(command="create_backup", description="💾 Create a backup"),
+                    BotCommand(command="bot_update", description="🔄 Update the bot"),
+                    BotCommand(command="pwnkill", description="🗡️ Kill the daemon"),
                     BotCommand(
                         command="soft_restart_to_manual",
-                        description="Restart the daemon to manual mode",
+                        description="🔁🤖 Restart the daemon to manual mode",
                     ),
                     BotCommand(
                         command="soft_restart_to_auto",
-                        description="Restart the daemon to auto mode",
+                        description="🔁🛜 Restart the daemon to auto mode",
                     ),
                     BotCommand(
                         command="send_backup",
-                        description="Send the backup if it is available",
+                        description="📤 Send the backup if it is available",
                     ),
                     BotCommand(
                         command="help",
-                        description="Get the list of available commands and their descriptions",
+                        description="📜 Get the list of available commands and their descriptions",
                     ),
                     BotCommand(
                         command="rot13",
-                        description="Encode/Decode ROT13",
+                        description="🔠 Encode/Decode ROT13",
                     ),
-                    BotCommand(command="debase64", description="Decode Base64"),
-                    BotCommand(command="base64", description="Encode Base64"),
-                    BotCommand(command="cmd", description="Run a command (As sudo)"),
-                    BotCommand(command="kill_ps", description="Kill a process (By id)"),
+                    BotCommand(command="debase64", description="🔠 Decode Base64"),
+                    BotCommand(command="base64", description="🔠 Encode Base64"),
+                    BotCommand(command="cmd", description="> Run a command (As sudo)"),
+                    BotCommand(command="kill_ps", description="🔪 Kill a process (By id)"),
                     BotCommand(
-                        command="kill_ps_name", description="Kill a process (By name)"
-                    ),
-                    BotCommand(
-                        command="turn_led_on", description="Turn the ACT led on"
+                        command="kill_ps_name", description="🔪 Kill a process (By name)"
                     ),
                     BotCommand(
-                        command="turn_led_off", description="Turn the ACT led off"
+                        command="turn_led_on", description="💡 Turn the ACT led on"
+                    ),
+                    BotCommand(
+                        command="turn_led_off", description="⛔💡Turn the ACT led off"
                     ),
                 ],
                 scope=telegram.BotCommandScopeAllPrivateChats(),
