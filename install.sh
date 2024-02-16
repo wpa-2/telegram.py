@@ -8,6 +8,20 @@ function user_sleep() {
 	sleep 0.5
 }
 
+function verify_internet_connection() {
+	# https://stackoverflow.com/questions/929368/how-to-test-an-internet-connection-with-bash
+	if wget -q --spider http://google.com; then
+		echo "[ + ] You have internet connection, continue with the installation"
+	else
+		echo "[ - ] You don't have internet connection, please connect to the internet and try again."
+		echo "[ ~ ] Refer to https://pwnagotchi.org/getting-started"
+		echo "[ ~ ] Also, feel free to chat with us on Discord: https://discord.gg/PgaU3Vp"
+		echo "[ ~ ] If you feel that this is an error, please open an issue on https://github.com/wpa-2/telegram.py/issues/new/choose"
+		echo "[ ! ] Exiting..."
+		exit 0
+	fi
+}
+
 function is_bookworm() {
 	is_bookworm=$(grep "bookworm" /etc/os-release)
 	if [ -z "$is_bookworm" ]; then
@@ -134,6 +148,11 @@ elif [ "$EUID" -ne 0 ]; then
 fi
 
 user_sleep
+echo "[ + ] Welcome to the installation script of telegram.py!"
+user_sleep
+echo "[ + ] Verifying internet connection..."
+verify_internet_connection
+user_sleep
 echo "[ + ] Getting installation path..."
 get_installation_path
 user_sleep
@@ -155,4 +174,3 @@ user_sleep
 echo "[ * ] You can do so with:"
 user_sleep
 echo "[ > ] sudo systemctl restart pwnagotchi"
-
