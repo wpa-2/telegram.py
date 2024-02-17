@@ -492,7 +492,7 @@ class Telegram(plugins.Plugin):
 
     def handle_exception(self, update, context, e) -> None:
         if update.effective_chat.id == int(self.options.get("chat_id")):
-            error_text = f"⛔ Unexpected error ocurred:\n<code>{e}</code>\nIf this keeps happening, please check the logs and submit an issue with screenshots to https://github.com/wpa-2/telegram.py"
+            error_text = f"⛔ Unexpected error ocurred:\n<code>{e}</code>\nIf this keeps happening, please check the logs and submit an issue to https://github.com/wpa-2/telegram.py/issues/new/choose"
             self.generate_log(error_text, "ERROR")
             self.send_sticker(update, context, random.choice(stickers_exception))
             self.send_new_message(update, context, error_text)
