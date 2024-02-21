@@ -215,6 +215,14 @@ class Telegram(plugins.Plugin):
                     BotCommand(
                         command="turn_led_off", description="⛔💡Turn the ACT led off"
                     ),
+                    BotCommand(
+                        command="string_to_numbers",
+                        description="🔠 Convert string to numbers",
+                    ),
+                    BotCommand(
+                        command="string_to_leet",
+                        description="🔠 Convert string to leet",
+                    ),
                 ],
                 scope=telegram.BotCommandScopeAllPrivateChats(),
             )
@@ -417,6 +425,18 @@ class Telegram(plugins.Plugin):
         )
         dispatcher.add_handler(
             CommandHandler(
+                "string_to_numbers",
+                lambda update, context: self.string_to_numbers(agent, update, context),
+            )
+        )
+        dispatcher.add_handler(
+            CommandHandler(
+                "string_to_leet",
+                lambda update, context: self.string_to_leet(agent, update, context),
+            )
+        )
+        dispatcher.add_handler(
+            CommandHandler(
                 "cmd", lambda update, context: self.command_executed(update, context)
             )
         )
@@ -449,7 +469,6 @@ class Telegram(plugins.Plugin):
                 ),
             )
         )
-
         dispatcher.add_handler(
             CallbackQueryHandler(
                 lambda update, context: self.button_handler(agent, update, context)
@@ -1124,6 +1143,14 @@ class Telegram(plugins.Plugin):
                 self.handle_exception(update, context, e)
             return
 
+    def string_to_numbers(self, agent, update, context):
+        """Convert an string into numbers. ACAB = 1312"""
+        return self.comming_soon(update, context)
+
+    def string_to_leet(self, agent, update, context):
+        """Convert an string into leet. LEET = 1337"""
+        return self.comming_soon(update, context)
+
     def command_executed(self, update, context):
         """Execute a command on the pwnagotchi"""
         if update.effective_chat.id == int(self.options.get("chat_id")):
@@ -1196,6 +1223,8 @@ class Telegram(plugins.Plugin):
                 "\n/rot13 <code>text</code> - Encode/Decode ROT13"
                 "\n/debase64 <code>text</code> - Decode Base64"
                 "\n/base64 <code>text</code> - Encode Base64"
+                "\n/string_to_numbers <code>text</code> - ACAB = 1312"
+                "\n/string_to_leet <code>text</code> - LEET = 1337"
                 "\n<b><u> System commands </u></b>"
                 "\n/reboot_to_manual - Reboot the device to manual mode"
                 "\n/reboot_to_auto - Reboot the device to auto mode"
