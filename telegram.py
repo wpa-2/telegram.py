@@ -1164,7 +1164,7 @@ class Telegram(plugins.Plugin):
                             response += letter
                 else:
                     response = "⛔ No text provided to convert to numbers.\nUsage: /string_to_numbers <code>text</code>"
-                response = f"🔠 String to numbers <code>{response}</code>"
+                response = f"🔠 String to numbers: <code>{response}</code>"
                 self.update_existing_message(update, context, response)
             except Exception as e:
                 self.handle_exception(update, context, e)
@@ -1216,9 +1216,7 @@ class Telegram(plugins.Plugin):
                             response += leet_mapping[letter.lower()]
                         else:
                             warning = True
-                        response += letter
-
-                    response = f"🔠 String to leet <code>{response}</code>"
+                    response = f"🔠 String to leet: <code>{response}</code>"
                     if warning:
                         response += "\n\n<i>⚠ Some characters were deleted to avoid breaking the leet format.</i>"
                 else:
