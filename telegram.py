@@ -201,6 +201,14 @@ class Telegram(plugins.Plugin):
                     ),
                     BotCommand(command="debase64", description="🔠 Decode Base64"),
                     BotCommand(command="base64", description="🔠 Encode Base64"),
+                    BotCommand(
+                        command="string_to_numbers",
+                        description="🔠 Encode string to numbers",
+                    ),
+                    BotCommand(
+                        command="string_to_leet",
+                        description="🔠 Encode string to leet",
+                    ),
                     BotCommand(command="cmd", description="> Run a command (As sudo)"),
                     BotCommand(
                         command="kill_ps", description="🔪 Kill a process (By id)"
@@ -214,14 +222,6 @@ class Telegram(plugins.Plugin):
                     ),
                     BotCommand(
                         command="turn_led_off", description="⛔💡Turn the ACT led off"
-                    ),
-                    BotCommand(
-                        command="string_to_numbers",
-                        description="🔠 Convert string to numbers",
-                    ),
-                    BotCommand(
-                        command="string_to_leet",
-                        description="🔠 Convert string to leet",
                     ),
                 ],
                 scope=telegram.BotCommandScopeAllPrivateChats(),
@@ -1145,11 +1145,93 @@ class Telegram(plugins.Plugin):
 
     def string_to_numbers(self, agent, update, context):
         """Convert an string into numbers. ACAB = 1312"""
-        return self.comming_soon(update, context)
+        if update.effective_chat.id == int(self.options.get("chat_id")):
+            try:
+                args = self.join_context_args(context)
+                if args:
+                    response = ""
+                    # Sorry for this oneliner, but I think that does not make sense to create a function for this
+                    alphabet_dict = {
+                        char: letter
+                        for letter, char in enumerate(
+                            "abcdefghijklmnopqrstuvwxyz", start=1
+                        )
+                    }
+                    for letter in args:
+                        if letter.lower() in alphabet_dict:
+                            response += str(alphabet_dict[letter])
+                        else:
+                            response += letter
+                else:
+                    response = "⛔ No text provided to convert to numbers.\nUsage: /string_to_numbers <code>text</code>"
+                response = f"🔠 String to numbers <code>{response}</code"
+                self.update_existing_message(update, context, response)
+            except Exception as e:
+                self.handle_exception(update, context, e)
+            return
+
+    def numbers_to_string(self, agent, update, context):
+        """Convert numbers into a string. 1312 = ACAB"""
+        if update.effective_chat.id == int(self.options.get("chat_id")):
+            return self.comming_soon(update, context)
 
     def string_to_leet(self, agent, update, context):
         """Convert an string into leet. LEET = 1337"""
-        return self.comming_soon(update, context)
+        if update.effective_chat.id == int(self.options.get("chat_id")):
+            try:
+                args = self.join_context_args(context)
+                if args:
+                    warning = False
+                    response = ""
+                    leet_mapping = {
+                        "a": "4",
+                        "b": "8",
+                        "c": "(",
+                        "d": "|)",
+                        "e": "3",
+                        "f": "/=",
+                        "g": "6",
+                        "h": "#",
+                        "i": "!",
+                        "j": ",_|",
+                        "k": "|<",
+                        "l": "1",
+                        "m": "(V)",
+                        "n": "^",
+                        "o": "0",
+                        "p": "|°",
+                        "q": "9",
+                        "r": "I2",
+                        "s": "5",
+                        "t": "7",
+                        "u": "(_)",
+                        "v": "\\/",
+                        "w": "VV",
+                        "x": "><",
+                        "y": "`/",
+                        "z": ">_",
+                    }
+                    for letter in args:
+                        if letter.lower() in leet_mapping:
+                            response += leet_mapping[letter.lower()]
+                        else:
+                            warning = True
+                        response += letter
+
+                    response = f"🔠 String to leet <code>{response}</code"
+                    if warning:
+                        response += "\n\n<i>⚠ Some characters were deleted to avoid breaking the leet format.</i>"
+                else:
+                    response = "⛔ No text provided to convert to leet.\nUsage: /string_to_leet <code>text</code>"
+                self.update_existing_message(update, context, response)
+            except Exception as e:
+                self.handle_exception(update, context, e)
+            return
+
+    def leet_to_string(self, agent, update, context):
+        """Convert leet into a string. 1337 = LEET"""
+        if update.effective_chat.id == int(self.options.get("chat_id")):
+            return self.comming_soon(update, context)
 
     def command_executed(self, update, context):
         """Execute a command on the pwnagotchi"""
