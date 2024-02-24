@@ -209,6 +209,13 @@ class Telegram(plugins.Plugin):
                         command="string_to_leet",
                         description="🔠 Encode string to leet",
                     ),
+                    BotCommand(
+                        command="numbers_to_string",
+                        description="🔠 Decode numbers to string",
+                    ),
+                    BotCommand(
+                        command="leet_to_string", description="🔠 Decode leet to string"
+                    ),
                     BotCommand(command="cmd", description="> Run a command (As sudo)"),
                     BotCommand(
                         command="kill_ps", description="🔪 Kill a process (By id)"
@@ -433,6 +440,18 @@ class Telegram(plugins.Plugin):
             CommandHandler(
                 "string_to_leet",
                 lambda update, context: self.string_to_leet(agent, update, context),
+            )
+        )
+        dispatcher.add_handler(
+            CommandHandler(
+                "numbers_to_string",
+                lambda update, context: self.numbers_to_string(agent, update, context),
+            )
+        )
+        dispatcher.add_handler(
+            CommandHandler(
+                "leet_to_string",
+                lambda update, context: self.leet_to_string(agent, update, context),
             )
         )
         dispatcher.add_handler(
@@ -1231,9 +1250,8 @@ class Telegram(plugins.Plugin):
                     response = f"🔠 String to leet: <code>{response}</code>"
                     if warning:
                         response += (
-                            "\n\n<i>⚠ Some characters were deleted to avoid breaking the leet format.</i>: " + ",".join(
-                                warning_list
-                            )
+                            "\n\n<i>⚠ Some characters were deleted to avoid breaking the leet format.</i>: "
+                            + ",".join(warning_list)
                         )
                 else:
                     response = "⛔ No text provided to convert to leet.\nUsage: /string_to_leet <code>text</code>"
