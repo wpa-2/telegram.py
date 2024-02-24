@@ -1189,8 +1189,8 @@ class Telegram(plugins.Plugin):
                 args = self.join_context_args(context)
                 if args:
                     response = ""
-                    string = args.upper()
-                    for char in string:
+                    args = args.upper().split(" ")
+                    for char in args:
                         if char.isdigit():
                             number = chr(int(char) + 64)
                             response += number
