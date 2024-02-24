@@ -1150,18 +1150,11 @@ class Telegram(plugins.Plugin):
                 args = self.join_context_args(context)
                 if args:
                     response = ""
-                    # Sorry for this oneliner, but I think that does not make sense to create a function for this
-                    alphabet_dict = {
-                        char: letter
-                        for letter, char in enumerate(
-                            "abcdefghijklmnopqrstuvwxyz", start=1
-                        )
-                    }
-                    for letter in args:
-                        if letter.lower() in alphabet_dict:
-                            response += str(alphabet_dict[letter])
-                        else:
-                            response += letter
+                    string = args.upper()
+                    for char in string:
+                        if char.isalpha():
+                            number = ord(char) - 64
+                            response += str(number)
                 else:
                     response = "⛔ No text provided to convert to numbers.\nUsage: /string_to_numbers <code>text</code>"
                 response = f"🔠 String to numbers: <code>{response}</code>"
@@ -1182,6 +1175,7 @@ class Telegram(plugins.Plugin):
                 args = self.join_context_args(context)
                 if args:
                     warning = False
+                    warning_list = []
                     response = ""
                     leet_mapping = {
                         "a": "4",
@@ -1216,9 +1210,14 @@ class Telegram(plugins.Plugin):
                             response += leet_mapping[letter.lower()]
                         else:
                             warning = True
+                            warning_list.append(letter)
                     response = f"🔠 String to leet: <code>{response}</code>"
                     if warning:
-                        response += "\n\n<i>⚠ Some characters were deleted to avoid breaking the leet format.</i>"
+                        response += (
+                            "\n\n<i>⚠ Some characters were deleted to avoid breaking the leet format.</i>: " + ",".join(
+                                warning_list
+                            )
+                        )
                 else:
                     response = "⛔ No text provided to convert to leet.\nUsage: /string_to_leet <code>text</code>"
                 self.update_existing_message(update, context, response)
