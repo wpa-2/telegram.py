@@ -1166,7 +1166,24 @@ class Telegram(plugins.Plugin):
     def numbers_to_string(self, agent, update, context):
         """Convert numbers into a string. 1312 = ACAB"""
         if update.effective_chat.id == int(self.options.get("chat_id")):
-            return self.comming_soon(update, context)
+            try:
+                args = self.join_context_args(context)
+                if args:
+                    response = ""
+                    string = args.upper()
+                    for char in string:
+                        if char.isdigit():
+                            number = chr(int(char) + 64)
+                            response += number
+                        else:
+                            response += char
+                else:
+                    response = "⛔ No numbers provided to convert to string.\nUsage: /numbers_to_string <code>numbers</code>"
+                response = f"🔠 Numbers to string: <code>{response}</code>"
+                self.update_existing_message(update, context, response)
+            except Exception as e:
+                self.handle_exception(update, context, e)
+            return
 
     def string_to_leet(self, agent, update, context):
         """Convert an string into leet. LEET = 1337"""
@@ -1207,7 +1224,7 @@ class Telegram(plugins.Plugin):
                     }
                     for letter in args:
                         if letter.lower() in leet_mapping:
-                            response += leet_mapping[letter.lower()]
+                            response += leet_mapping[letter.lower()] + " "
                         else:
                             warning = True
                             warning_list.append(letter)
@@ -1228,7 +1245,50 @@ class Telegram(plugins.Plugin):
     def leet_to_string(self, agent, update, context):
         """Convert leet into a string. 1337 = LEET"""
         if update.effective_chat.id == int(self.options.get("chat_id")):
-            return self.comming_soon(update, context)
+            try:
+                args = self.join_context_args(context)
+                if args:
+                    response = ""
+                    leet_mapping = {
+                        "a": "4",
+                        "b": "8",
+                        "c": "(",
+                        "d": "|)",
+                        "e": "3",
+                        "f": "/=",
+                        "g": "6",
+                        "h": "#",
+                        "i": "!",
+                        "j": ",_|",
+                        "k": "|c",
+                        "l": "1",
+                        "m": "(V)",
+                        "n": "^",
+                        "o": "0",
+                        "p": "|°",
+                        "q": "9",
+                        "r": "I2",
+                        "s": "5",
+                        "t": "7",
+                        "u": "(_)",
+                        "v": "\\/",
+                        "w": "VV",
+                        "x": "}{",
+                        "y": "`/",
+                        "z": ">_",
+                    }
+                    args = args.split(" ")
+                    for leet in args:
+                        for key, value in leet_mapping.items():
+                            if leet == value:
+                                response += key
+                else:
+                    response = "⛔ No leet provided to convert to string.\nUsage: /leet_to_string <code>leet</code>"
+                response = f"🔠 Leet to string: <code>{response}</code>"
+                self.update_existing_message(update, context, response)
+            except Exception as e:
+                self.handle_exception(update, context, e)
+            return
 
     def command_executed(self, update, context):
         """Execute a command on the pwnagotchi"""
