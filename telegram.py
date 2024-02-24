@@ -69,6 +69,34 @@ stickers_handshake_or_wpa = [
     "CAACAgQAAxkBAAIKLGXHDMbkJgl6jf2fmkoz5WoSVO8KAAIcAAPTrAoC1E8xZAtCX8A0BA",
 ]
 
+leet_mapping = {
+    "a": "4",
+    "b": "8",
+    "c": "(",
+    "d": "|)",
+    "e": "3",
+    "f": "/=",
+    "g": "6",
+    "h": "#",
+    "i": "!",
+    "j": ",_|",
+    "k": "|c",
+    "l": "1",
+    "m": "(V)",
+    "n": "^",
+    "o": "0",
+    "p": "|°",
+    "q": "9",
+    "r": "I2",
+    "s": "5",
+    "t": "7",
+    "u": "(_)",
+    "v": "\\/",
+    "w": "VV",
+    "x": "}{",
+    "y": "`/",
+    "z": ">_",
+}
 
 class Telegram(plugins.Plugin):
     __author__ = "WPA2 edited by nothingbutlucas"
@@ -1213,34 +1241,6 @@ class Telegram(plugins.Plugin):
                     warning = False
                     warning_list = []
                     response = ""
-                    leet_mapping = {
-                        "a": "4",
-                        "b": "8",
-                        "c": "(",
-                        "d": "|)",
-                        "e": "3",
-                        "f": "/=",
-                        "g": "6",
-                        "h": "#",
-                        "i": "!",
-                        "j": ",_|",
-                        "k": "|c",
-                        "l": "1",
-                        "m": "(V)",
-                        "n": "^",
-                        "o": "0",
-                        "p": "|°",
-                        "q": "9",
-                        "r": "I2",
-                        "s": "5",
-                        "t": "7",
-                        "u": "(_)",
-                        "v": "\\/",
-                        "w": "VV",
-                        "x": "}{",
-                        "y": "`/",
-                        "z": ">_",
-                    }
                     for letter in args:
                         if letter.lower() in leet_mapping:
                             response += leet_mapping[letter.lower()] + " "
@@ -1270,34 +1270,6 @@ class Telegram(plugins.Plugin):
                 args = self.join_context_args(context)
                 if args:
                     response = ""
-                    leet_mapping = {
-                        "a": "4",
-                        "b": "8",
-                        "c": "(",
-                        "d": "|)",
-                        "e": "3",
-                        "f": "/=",
-                        "g": "6",
-                        "h": "#",
-                        "i": "!",
-                        "j": ",_|",
-                        "k": "|c",
-                        "l": "1",
-                        "m": "(V)",
-                        "n": "^",
-                        "o": "0",
-                        "p": "|°",
-                        "q": "9",
-                        "r": "I2",
-                        "s": "5",
-                        "t": "7",
-                        "u": "(_)",
-                        "v": "\\/",
-                        "w": "VV",
-                        "x": "}{",
-                        "y": "`/",
-                        "z": ">_",
-                    }
                     args = args.split(" ")
                     for leet in args:
                         for key, value in leet_mapping.items():
