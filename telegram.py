@@ -1245,8 +1245,11 @@ class Telegram(plugins.Plugin):
                         if letter.lower() in leet_mapping:
                             response += leet_mapping[letter.lower()] + " "
                         else:
-                            warning = True
-                            warning_list.append(letter)
+                            if letter not in warning_list and letter != " ":
+                                warning = True
+                                warning_list.append(letter)
+                            elif letter == " ":
+                                response += "  "
                     response = f"🔠 String to leet: <code>{response}</code>"
                     if warning:
                         response += (
@@ -1382,6 +1385,8 @@ class Telegram(plugins.Plugin):
                 "\n/base64 <code>text</code> - Encode Base64"
                 "\n/string_to_numbers <code>text</code> - ACAB = 1312"
                 "\n/string_to_leet <code>text</code> - LEET = 1337"
+                "\n/numbers_to_string <code>numbers</code> - 1312 = ACAB"
+                "\n/leet_to_string <code>text</code> - 1337 = LEET"
                 "\n<b><u> System commands </u></b>"
                 "\n/reboot_to_manual - Reboot the device to manual mode"
                 "\n/reboot_to_auto - Reboot the device to auto mode"
