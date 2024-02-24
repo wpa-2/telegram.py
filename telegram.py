@@ -1154,7 +1154,7 @@ class Telegram(plugins.Plugin):
                     for char in string:
                         if char.isalpha():
                             number = ord(char) - 64
-                            response += str(number)
+                            response += str(number) + " "
                 else:
                     response = "⛔ No text provided to convert to numbers.\nUsage: /string_to_numbers <code>text</code>"
                 response = f"🔠 String to numbers: <code>{response}</code>"
