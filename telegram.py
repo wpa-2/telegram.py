@@ -69,6 +69,34 @@ stickers_handshake_or_wpa = [
     "CAACAgQAAxkBAAIKLGXHDMbkJgl6jf2fmkoz5WoSVO8KAAIcAAPTrAoC1E8xZAtCX8A0BA",
 ]
 
+leet_mapping = {
+    "a": "4",
+    "b": "8",
+    "c": "(",
+    "d": "|)",
+    "e": "3",
+    "f": "/=",
+    "g": "6",
+    "h": "#",
+    "i": "!",
+    "j": ",_|",
+    "k": "|c",
+    "l": "1",
+    "m": "(V)",
+    "n": "^",
+    "o": "0",
+    "p": "|°",
+    "q": "9",
+    "r": "I2",
+    "s": "5",
+    "t": "7",
+    "u": "(_)",
+    "v": "\\/",
+    "w": "VV",
+    "x": "}{",
+    "y": "`/",
+    "z": ">_",
+}
 
 class Telegram(plugins.Plugin):
     __author__ = "WPA2 edited by nothingbutlucas"
@@ -201,6 +229,21 @@ class Telegram(plugins.Plugin):
                     ),
                     BotCommand(command="debase64", description="🔠 Decode Base64"),
                     BotCommand(command="base64", description="🔠 Encode Base64"),
+                    BotCommand(
+                        command="string_to_numbers",
+                        description="🔠 Encode string to numbers",
+                    ),
+                    BotCommand(
+                        command="string_to_leet",
+                        description="🔠 Encode string to leet",
+                    ),
+                    BotCommand(
+                        command="numbers_to_string",
+                        description="🔠 Decode numbers to string",
+                    ),
+                    BotCommand(
+                        command="leet_to_string", description="🔠 Decode leet to string"
+                    ),
                     BotCommand(command="cmd", description="> Run a command (As sudo)"),
                     BotCommand(
                         command="kill_ps", description="🔪 Kill a process (By id)"
@@ -417,6 +460,30 @@ class Telegram(plugins.Plugin):
         )
         dispatcher.add_handler(
             CommandHandler(
+                "string_to_numbers",
+                lambda update, context: self.string_to_numbers(agent, update, context),
+            )
+        )
+        dispatcher.add_handler(
+            CommandHandler(
+                "string_to_leet",
+                lambda update, context: self.string_to_leet(agent, update, context),
+            )
+        )
+        dispatcher.add_handler(
+            CommandHandler(
+                "numbers_to_string",
+                lambda update, context: self.numbers_to_string(agent, update, context),
+            )
+        )
+        dispatcher.add_handler(
+            CommandHandler(
+                "leet_to_string",
+                lambda update, context: self.leet_to_string(agent, update, context),
+            )
+        )
+        dispatcher.add_handler(
+            CommandHandler(
                 "cmd", lambda update, context: self.command_executed(update, context)
             )
         )
@@ -449,7 +516,6 @@ class Telegram(plugins.Plugin):
                 ),
             )
         )
-
         dispatcher.add_handler(
             CallbackQueryHandler(
                 lambda update, context: self.button_handler(agent, update, context)
@@ -1124,6 +1190,99 @@ class Telegram(plugins.Plugin):
                 self.handle_exception(update, context, e)
             return
 
+    def string_to_numbers(self, agent, update, context):
+        """Convert an string into numbers. ACAB = 1312"""
+        if update.effective_chat.id == int(self.options.get("chat_id")):
+            try:
+                args = self.join_context_args(context)
+                if args:
+                    response = ""
+                    string = args.upper()
+                    for char in string:
+                        if char.isalpha():
+                            number = ord(char) - 64
+                            response += str(number) + " "
+                else:
+                    response = "⛔ No text provided to convert to numbers.\nUsage: /string_to_numbers <code>text</code>"
+                response = f"🔠 String to numbers: <code>{response}</code>"
+                self.update_existing_message(update, context, response)
+            except Exception as e:
+                self.handle_exception(update, context, e)
+            return
+
+    def numbers_to_string(self, agent, update, context):
+        """Convert numbers into a string. 1312 = ACAB"""
+        if update.effective_chat.id == int(self.options.get("chat_id")):
+            try:
+                args = self.join_context_args(context)
+                if args:
+                    response = ""
+                    args = args.upper().split(" ")
+                    for char in args:
+                        if char.isdigit():
+                            number = chr(int(char) + 64)
+                            response += number
+                        else:
+                            response += char
+                else:
+                    response = "⛔ No numbers provided to convert to string.\nUsage: /numbers_to_string <code>numbers</code>"
+                response = f"🔠 Numbers to string: <code>{response}</code>"
+                self.update_existing_message(update, context, response)
+            except Exception as e:
+                self.handle_exception(update, context, e)
+            return
+
+    def string_to_leet(self, agent, update, context):
+        """Convert an string into leet. LEET = 1337"""
+        if update.effective_chat.id == int(self.options.get("chat_id")):
+            try:
+                args = self.join_context_args(context)
+                if args:
+                    warning = False
+                    warning_list = []
+                    response = ""
+                    for letter in args:
+                        if letter.lower() in leet_mapping:
+                            response += leet_mapping[letter.lower()] + " "
+                        else:
+                            if letter not in warning_list and letter != " ":
+                                warning = True
+                                warning_list.append(letter)
+                            elif letter == " ":
+                                response += "  "
+                    response = f"🔠 String to leet: <code>{response}</code>"
+                    if warning:
+                        response += (
+                            "\n\n<i>⚠ Some characters were deleted to avoid breaking the leet format.</i>: "
+                            + ",".join(warning_list)
+                        )
+                else:
+                    response = "⛔ No text provided to convert to leet.\nUsage: /string_to_leet <code>text</code>"
+                self.update_existing_message(update, context, response)
+            except Exception as e:
+                self.handle_exception(update, context, e)
+            return
+
+    def leet_to_string(self, agent, update, context):
+        """Convert leet into a string. 1337 = LEET"""
+        if update.effective_chat.id == int(self.options.get("chat_id")):
+            try:
+                args = self.join_context_args(context)
+                if args:
+                    response = ""
+                    args = args.split(" ")
+                    for leet in args:
+                        for key, value in leet_mapping.items():
+                            if leet == value:
+                                response += key
+                else:
+                    response = "⛔ No leet provided to convert to string.\nUsage: /leet_to_string <code>leet</code>"
+                response = f"🔠 Leet to string: <code>{response}</code>"
+                self.update_existing_message(update, context, response)
+            except Exception as e:
+                self.handle_exception(update, context, e)
+            return
+
     def command_executed(self, update, context):
         """Execute a command on the pwnagotchi"""
         if update.effective_chat.id == int(self.options.get("chat_id")):
@@ -1196,6 +1355,10 @@ class Telegram(plugins.Plugin):
                 "\n/rot13 <code>text</code> - Encode/Decode ROT13"
                 "\n/debase64 <code>text</code> - Decode Base64"
                 "\n/base64 <code>text</code> - Encode Base64"
+                "\n/string_to_numbers <code>text</code> - ACAB = 1312"
+                "\n/string_to_leet <code>text</code> - LEET = 1337"
+                "\n/numbers_to_string <code>numbers</code> - 1312 = ACAB"
+                "\n/leet_to_string <code>text</code> - 1337 = LEET"
                 "\n<b><u> System commands </u></b>"
                 "\n/reboot_to_manual - Reboot the device to manual mode"
                 "\n/reboot_to_auto - Reboot the device to auto mode"
