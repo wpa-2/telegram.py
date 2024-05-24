@@ -48,8 +48,10 @@ function install_dependencies() {
 	fi
 	if is_bookworm; then
 		pip3 install python-telegram-bot==13.15 --break-system-packages
+  		sudo apt install python3-qrcode
 	else
 		pip3 install python-telegram-bot==13.15
+  		pip3 install qrcode
 	fi
 }
 
