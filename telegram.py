@@ -12,6 +12,7 @@ import random
 import codecs
 import base64
 import toml
+from PIL import Image
 from time import sleep
 from pwnagotchi import fs
 from pwnagotchi.ui import view
@@ -950,29 +951,19 @@ class Telegram(plugins.Plugin):
             try:
                 chat_id = update.effective_user["id"]
                 context.bot.send_chat_action(chat_id, "upload_photo")
-                display = agent.view()
-                picture_path = "/root/pwnagotchi_screenshot.png"
-
-                # Capture screenshot
-                screenshot = display.image()
-
-                # Capture the screen rotation value and rotate the image (x degrees) before saving
-                # If there is no rotation value, the default value is 0
-
-                rotation_degree = self.screen_rotation
-
-                rotated_screenshot = screenshot.rotate(rotation_degree)
-
-                # Save the rotated image
-                rotated_screenshot.save(picture_path, "png")
-
-                with open(picture_path, "rb") as photo:
+                photo_path = '/var/tmp/pwnagotchi/pwnagotchi.png'
+                with Image.open(photo_path) as img:
+                    img = img.resize((img.width * 2, img.height * 2), Image.ANTIALIAS)
+                    temp_path = '/var/tmp/pwnagotchi/resized_pwnagotchi.png'
+                    img.save(temp_path)
+                with open(temp_path, "rb") as photo:
                     context.bot.send_photo(
                         chat_id=update.effective_chat.id, photo=photo
                     )
 
                 response = "✅ Screenshot taken and sent!"
                 self.update_existing_message(update, context, response)
+                os.remove(temp_path)
             except Exception as e:
                 self.handle_exception(update, context, e)
 
