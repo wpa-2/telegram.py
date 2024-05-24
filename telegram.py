@@ -1,3 +1,7 @@
+import glob
+import html
+import json
+import qrcode
 import os
 import pwd
 import logging
@@ -8,6 +12,7 @@ import random
 import codecs
 import base64
 import toml
+from PIL import Image
 from time import sleep
 from pwnagotchi import fs
 from pwnagotchi.ui import view
@@ -119,6 +124,14 @@ class Telegram(plugins.Plugin):
         self.updater = None
         self.start_menu_sent = False
         self.last_backup = ""
+        self.qrlist_path = "/root/.qrlist"
+        self.qrcode_dir = '/root/qrcodes/'
+        self.locdata_path = '/root/handshakes/'
+        self.all_bssid = []
+        self.all_ssid = []
+        self.all_passwd = []
+        self.file_list = []
+        
         # Read toml file
         try:
             with open("/etc/pwnagotchi/config.toml", "r") as f:
@@ -260,6 +273,9 @@ class Telegram(plugins.Plugin):
                     ),
                     BotCommand(
                         command="turn_led_off", description="⛔💡Turn the ACT led off"
+                    ),
+                    BotCommand(
+                        command="qr_files", description="📇generate qr files and list cracked files and send  with /qr_files #"
                     ),
                 ],
                 scope=telegram.BotCommandScopeAllPrivateChats(),
@@ -519,6 +535,13 @@ class Telegram(plugins.Plugin):
                 ),
             )
         )
+        
+        dispatcher.add_handler(
+            CommandHandler(
+                "qr_files",
+                lambda update, context: self.qr_files(update, context),
+            )
+        )
         dispatcher.add_handler(
             CallbackQueryHandler(
                 lambda update, context: self.button_handler(agent, update, context)
@@ -548,6 +571,7 @@ class Telegram(plugins.Plugin):
                 "soft_restart_to_auto": self.soft_restart_to_auto,
                 "send_backup": self.send_backup,
                 "bot_update": self.bot_update,
+                "qr_files": self.qr_files,
                 "create_backup": self.last_backup,
             }
 
@@ -558,7 +582,112 @@ class Telegram(plugins.Plugin):
             self.completed_tasks += 1
             if self.completed_tasks == self.num_tasks:
                 self.terminate_program()
+                
+    def _qr_generation(self, update, context):
+        try:
+            self._read_wpa_sec_file()
+        except FileNotFoundError:
+            return
+        for bssid, ssid, password in zip(self.all_bssid, self.all_ssid, self.all_passwd):
+            if not os.path.exists(self.qrcode_dir):
+                os.makedirs(self.qrcode_dir)
+            png_filepath = os.path.join(f"{self.qrcode_dir}{ssid}-{password}-{bssid.lower().replace(':', '')}.png")
+            filename = f"{ssid}-{password}-{bssid.lower().replace(':', '')}.png"
+            if os.path.exists(png_filepath):
+                continue
+            if os.path.exists(self.qrlist_path):
+                with open(self.qrlist_path, 'r') as qrlist_file:
+                    qrlist = qrlist_file.read().splitlines()
+                    if filename in qrlist:
+                        continue
+            qr_data = f"WIFI:T:WPA;S:{html.escape(ssid)};P:{html.escape(password)};;"
+            qr_code = qrcode.QRCode(
+                version=None,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            qr_code.add_data(qr_data)
+            qr_code.make(fit=True)
+            try:
+                if os.path.exists(self.qrlist_path):
+                    with open(self.qrlist_path, 'r') as qrlist_file:
+                        qrlist = qrlist_file.read().splitlines()
+                        if png_filepath in qrlist:
+                            continue
+                else:
+                    open(self.qrlist_path, 'w+').close()
+                img = qr_code.make_image(fill_color="yellow", back_color="black")
+                img.save(png_filepath)
+            except Exception as e:
+                logging.error(f"[neonbot] something went wrong generating QR code for {ssid}-{password}-{bssid.lower().replace(':', '')}: {e}")
+        
+    def _read_wpa_sec_file(self):
+        wpa_sec_filepath = '/root/handshakes/wpa-sec.cracked.potfile'
+        try:
+            with open(wpa_sec_filepath, 'r+', encoding='utf-8') as f:
+                for line_f in f:
+                    pwd_f = line_f.split(':')
+                    self.all_passwd.append(str(pwd_f[-1].rstrip('\n')))
+                    self.all_bssid.append(str(pwd_f[0]))
+                    self.all_ssid.append(str(pwd_f[-2]))
+        except:
+            pass
 
+    def qr_files(self, update, context):
+        update.effective_chat.id == int(self.options.get("chat_id"))
+        self._qr_generation(update, context)
+        args = context.args
+        idx_start = 1
+        data = None
+        if args and args[0].strip():
+            try:
+                selected_number = int(args[0])
+                if 1 <= selected_number <= len(os.listdir(self.qrcode_dir)):
+                    selected_file = os.listdir(self.qrcode_dir)[selected_number - 1]
+                    ssid_n_pass = selected_file.rsplit('-', 1)[-2]
+                    bssid = selected_file.rsplit('-', 1)[-1].rsplit('.', 1)[0].lower().replace(':', '')
+                    with open(f"{self.qrcode_dir}{selected_file}", 'rb') as f:
+                        caption = f"^^^ {ssid_n_pass}"
+                        geojson_files = glob.glob(f"/root/handshakes/*_{bssid}.gps.json")
+                        geojson_files += glob.glob(f"/root/handshakes/*_{bssid}.geo.json")
+                        if geojson_files:
+                            geojson_file = geojson_files[0]
+                            data = json.load(open(geojson_file, 'r'))
+                            if data is not None:
+                                if 'Latitude' in data and 'Longitude' in data:
+                                    lat = data['Latitude']
+                                    lng = data['Longitude']
+                                else:
+                                    lat = data.get('location', {}).get('lat')
+                                    lng = data.get('location', {}).get('lng')
+                                if lat is not None and lng is not None:
+                                    google_maps_link = f"https://www.google.com/maps?q={lat},{lng}"
+                                    caption += f"\n[Location Long: {lng} Lat:{lat}]({google_maps_link})"
+                                    context.bot.send_photo(update.effective_chat.id, f, caption, parse_mode="Markdown")
+                        else:
+                            context.bot.send_photo(update.effective_chat.id, f, caption)
+                else:
+                    context.bot.send_message(update.effective_chat.id, text="Invalid file number.")
+            except ValueError:
+                context.bot.send_message(update.effective_chat.id, text="Please enter a valid number.")
+        else:
+            self.file_list.clear()
+            for idx, filename in enumerate(os.listdir(self.qrcode_dir), start=1):
+                if filename.lower().endswith('.png'):
+                    file_name = filename.split('.')[0]
+                    bssid = file_name.split('-')[-1]
+                    geojson_files = glob.glob(f"/root/handshakes/*_{bssid}.gps.json")
+                    geojson_files += glob.glob(f"/root/handshakes/*_{bssid}.geo.json")
+                    if geojson_files:
+                        filename += " *geodata*"
+                    self.file_list.append(filename)
+                if idx % 30 == 0 or idx == len(os.listdir(self.qrcode_dir)):
+                    file_list_text = "\n".join([f"{i}. {fn}" for i, fn in enumerate(self.file_list, start=idx_start)])
+                    context.bot.send_message(update.effective_chat.id, text=file_list_text)
+                    self.file_list.clear()
+                    idx_start = idx + 1
+                    
     def handle_exception(self, update, context, e) -> None:
         if update.effective_chat.id == int(self.options.get("chat_id")):
             error_text = f"⛔ Unexpected error ocurred:\n<code>{e}</code>\nIf this keeps happening, please check the logs and submit an issue to https://github.com/wpa-2/telegram.py/issues/new/choose"
@@ -822,29 +951,19 @@ class Telegram(plugins.Plugin):
             try:
                 chat_id = update.effective_user["id"]
                 context.bot.send_chat_action(chat_id, "upload_photo")
-                display = agent.view()
-                picture_path = "/root/pwnagotchi_screenshot.png"
-
-                # Capture screenshot
-                screenshot = display.image()
-
-                # Capture the screen rotation value and rotate the image (x degrees) before saving
-                # If there is no rotation value, the default value is 0
-
-                rotation_degree = self.screen_rotation
-
-                rotated_screenshot = screenshot.rotate(rotation_degree)
-
-                # Save the rotated image
-                rotated_screenshot.save(picture_path, "png")
-
-                with open(picture_path, "rb") as photo:
+                photo_path = '/var/tmp/pwnagotchi/pwnagotchi.png'
+                with Image.open(photo_path) as img:
+                    img = img.resize((img.width * 2, img.height * 2), Image.ANTIALIAS)
+                    temp_path = '/var/tmp/pwnagotchi/resized_pwnagotchi.png'
+                    img.save(temp_path)
+                with open(temp_path, "rb") as photo:
                     context.bot.send_photo(
                         chat_id=update.effective_chat.id, photo=photo
                     )
 
                 response = "✅ Screenshot taken and sent!"
                 self.update_existing_message(update, context, response)
+                os.remove(temp_path)
             except Exception as e:
                 self.handle_exception(update, context, e)
 
@@ -1382,6 +1501,8 @@ class Telegram(plugins.Plugin):
                 "\n/pwnkill - Kill the daemon"
                 "\n/soft_restart_to_manual - Restart the daemon to manual mode"
                 "\n/soft_restart_to_auto - Restart the daemon to auto mode"
+                "\n/qr_files - list cracked potfile entries"
+                "\n/qr_files # - send qr file and location data if possible"
             )
             self.update_existing_message(
                 update, context, "".join(list_of_commands_with_descriptions)
