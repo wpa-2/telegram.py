@@ -297,7 +297,7 @@ class Telegram(plugins.Plugin):
             self.logger.error(str(e))
 
         if last_session.is_new() and last_session.handshakes > 0:
-            msg = f"Session started at {last_session.started_at()} and captured {last_session.handshakes} new handshakes"
+            msg = f"Session captured {last_session.handshakes} new handshakes"
             self.send_notification(msg)
 
             if last_session.is_new() and last_session.handshakes > 0:
