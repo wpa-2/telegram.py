@@ -548,7 +548,7 @@ class Telegram(plugins.Plugin):
                 "soft_restart_to_auto": self.soft_restart_to_auto,
                 "send_backup": self.send_backup,
                 "bot_update": self.bot_update,
-                "create_backup": self.last_backup,
+                "create_backup": self.create_backup,
             }
 
             action = action_map.get(str(query.data))
