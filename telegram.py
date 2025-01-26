@@ -1400,12 +1400,21 @@ class Telegram(plugins.Plugin):
                 chat_id=update.effective_chat.id, action="typing"
             )
             backup_files = [
-                "/root/brain.json",
+                "/root/settings.yaml",
+                "/root/client_secrets.json",
+                "/home/pi/handshakes/",
                 "/root/.api-report.json",
-                "/root/handshakes/",
-                "/root/peers/",
+                "/root/.ssh",
+                "/root/.bashrc",
+                "/root/.profile",
+                "/root/peers",
                 "/etc/pwnagotchi/",
-                "/var/log/pwnagotchi.log",
+                "/usr/local/share/pwnagotchi/custom-plugins",
+                "/etc/ssh/",
+                "/home/pi/.bashrc",
+                "/home/pi/.profile",
+                "/root/.auto-update",
+                "/home/pi/.wpa_sec_uploads",
             ]
 
             # Get datetime
