@@ -103,7 +103,7 @@ leet_mapping = {
 
 class Telegram(plugins.Plugin):
     __author__ = "WPA2 edited by nothingbutlucas"
-    __version__ = "0.2.2"
+    __version__ = "0.2.3"
     __license__ = "GPL3"
     __description__ = "Chats to telegram"
     __dependencies__ = ("python-telegram-bot==13.15",)
@@ -548,7 +548,7 @@ class Telegram(plugins.Plugin):
                 "soft_restart_to_auto": self.soft_restart_to_auto,
                 "send_backup": self.send_backup,
                 "bot_update": self.bot_update,
-                "create_backup": self.last_backup,
+                "create_backup": self.create_backup,
             }
 
             action = action_map.get(str(query.data))
@@ -1400,12 +1400,21 @@ class Telegram(plugins.Plugin):
                 chat_id=update.effective_chat.id, action="typing"
             )
             backup_files = [
-                "/root/brain.json",
+                "/root/settings.yaml",
+                "/root/client_secrets.json",
+                "/home/pi/handshakes/",
                 "/root/.api-report.json",
-                "/root/handshakes/",
-                "/root/peers/",
+                "/root/.ssh",
+                "/root/.bashrc",
+                "/root/.profile",
+                "/root/peers",
                 "/etc/pwnagotchi/",
-                "/var/log/pwnagotchi.log",
+                "/usr/local/share/pwnagotchi/custom-plugins",
+                "/etc/ssh/",
+                "/home/pi/.bashrc",
+                "/home/pi/.profile",
+                "/root/.auto-update",
+                "/home/pi/.wpa_sec_uploads",
             ]
 
             # Get datetime
